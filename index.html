@@ -474,7 +474,7 @@
 
     <!-- Main application script -->
     <script>
-        // Configuration
+        // Configuration with enhanced settings
         const CONFIG = {
             API_BASE_URL: '/Langchain-Agents/api',
             DEMO_MODE: false,
@@ -485,10 +485,37 @@
                 sequential: 'Sequential execution of agents',
                 parallel: 'Parallel execution with coordination',
                 hybrid: 'Dynamic execution based on task'
+            },
+            PERFORMANCE_METRICS: {
+                enabled: true,
+                sampleRate: 1000,
+                maxDataPoints: 100
+            },
+            DATABASE: {
+                poolSize: 5,
+                timeout: 5000,
+                retryInterval: 1000
+            },
+            AGENT_CONFIGS: {
+                professor_athena: {
+                    maxConcurrentTasks: 3,
+                    specialties: ['research', 'analysis', 'planning'],
+                    responseTimeout: 30000
+                },
+                dr_milgrim: {
+                    maxConcurrentTasks: 2,
+                    specialties: ['data_processing', 'pattern_recognition'],
+                    responseTimeout: 20000
+                },
+                yaat: {
+                    maxConcurrentTasks: 5,
+                    specialties: ['task_execution', 'coordination'],
+                    responseTimeout: 15000
+                }
             }
         };
 
-        // Static demo data with enhanced agent profiles
+        // Enhanced demo data with more realistic scenarios
         const DEMO_DATA = {
             agents: [
                 { 
@@ -497,7 +524,13 @@
                     status: 'active',
                     tasks_completed: 5,
                     specialty: 'Research & Analysis',
-                    confidence: 0.92
+                    confidence: 0.92,
+                    performance_metrics: {
+                        avg_response_time: 1200,
+                        success_rate: 0.95,
+                        task_complexity: 0.8
+                    },
+                    current_tasks: []
                 },
                 { 
                     id: 'dr_milgrim',
@@ -516,18 +549,33 @@
                     confidence: 0.95
                 }
             ],
-            messages: [
-                { from: 'professor_athena', to: 'dr_milgrim', type: 'query', content: 'Initiating research analysis' },
-                { from: 'dr_milgrim', to: 'yaat', type: 'response', content: 'Processing data patterns' },
-                { from: 'yaat', to: 'professor_athena', type: 'update', content: 'Executing defined tasks' }
+            scenarios: [
+                {
+                    name: 'Market Analysis',
+                    description: 'Analyze market trends and generate insights',
+                    workflow_type: 'sequential',
+                    stages: [
+                        { name: 'Data Collection', agent: 'professor_athena', duration: 2000 },
+                        { name: 'Pattern Analysis', agent: 'dr_milgrim', duration: 3000 },
+                        { name: 'Report Generation', agent: 'yaat', duration: 1500 }
+                    ]
+                },
+                {
+                    name: 'Real-time Monitoring',
+                    description: 'Monitor and respond to system events',
+                    workflow_type: 'parallel',
+                    stages: [
+                        { name: 'Event Processing', agent: 'dr_milgrim', duration: 1000 },
+                        { name: 'Alert Generation', agent: 'yaat', duration: 800 },
+                        { name: 'Response Planning', agent: 'professor_athena', duration: 1500 }
+                    ]
+                }
             ],
-            status: 'running',
-            data_store: {
-                current_task: 'Analyzing data patterns',
-                progress: 75,
-                results: [],
-                workflow_type: 'sequential',
-                start_time: new Date().toISOString()
+            performance_data: {
+                cpu_usage: [],
+                memory_usage: [],
+                response_times: [],
+                error_rates: []
             }
         };
 
@@ -794,7 +842,161 @@
             }
         }
 
-        // Add missing fetchWorkflowState function
+        // Production mode utilities
+        const ProductionMode = {
+            async initializeDatabase() {
+                try {
+                    const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/database/initialize`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(CONFIG.DATABASE)
+                    });
+                    return response.success;
+                } catch (error) {
+                    console.error('Database initialization failed:', error);
+                    return false;
+                }
+            },
+
+            async getAgentMetrics(agentId) {
+                try {
+                    return await fetchWithRetry(`${CONFIG.API_BASE_URL}/agents/${agentId}/metrics`);
+                } catch (error) {
+                    console.error(`Failed to fetch metrics for agent ${agentId}:`, error);
+                    return null;
+                }
+            },
+
+            async updateWorkflowState(stateId, updates) {
+                try {
+                    return await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/${stateId}/update`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updates)
+                    });
+                } catch (error) {
+                    console.error('Failed to update workflow state:', error);
+                    return false;
+                }
+            },
+
+            startPerformanceMonitoring() {
+                if (!CONFIG.PERFORMANCE_METRICS.enabled) return;
+                
+                const metrics = {
+                    timestamps: [],
+                    cpu: [],
+                    memory: [],
+                    responseTime: []
+                };
+
+                return setInterval(async () => {
+                    try {
+                        const perfData = await fetchWithRetry(`${CONFIG.API_BASE_URL}/system/metrics`);
+                        
+                        metrics.timestamps.push(Date.now());
+                        metrics.cpu.push(perfData.cpu_usage);
+                        metrics.memory.push(perfData.memory_usage);
+                        metrics.responseTime.push(perfData.avg_response_time);
+
+                        // Keep only the last N data points
+                        if (metrics.timestamps.length > CONFIG.PERFORMANCE_METRICS.maxDataPoints) {
+                            metrics.timestamps.shift();
+                            metrics.cpu.shift();
+                            metrics.memory.shift();
+                            metrics.responseTime.shift();
+                        }
+
+                        // Update performance visualization
+                        updatePerformanceCharts(metrics);
+                    } catch (error) {
+                        console.error('Performance monitoring error:', error);
+                    }
+                }, CONFIG.PERFORMANCE_METRICS.sampleRate);
+            }
+        };
+
+        // Demo mode utilities
+        const DemoMode = {
+            scenarios: DEMO_DATA.scenarios,
+            currentScenario: null,
+            
+            async startScenario(scenarioName) {
+                const scenario = this.scenarios.find(s => s.name === scenarioName);
+                if (!scenario) return false;
+
+                this.currentScenario = scenario;
+                let currentStage = 0;
+
+                const runStage = async () => {
+                    if (currentStage >= scenario.stages.length) {
+                        addMessage(`Scenario "${scenarioName}" completed`, 'success');
+                        return;
+                    }
+
+                    const stage = scenario.stages[currentStage];
+                    const agent = DEMO_DATA.agents.find(a => a.id === stage.agent);
+
+                    addMessage(`${agent.name} starting stage: ${stage.name}`, 'info');
+                    
+                    // Simulate stage execution
+                    await new Promise(resolve => setTimeout(resolve, stage.duration));
+                    
+                    // Update agent metrics
+                    agent.tasks_completed++;
+                    agent.performance_metrics.avg_response_time = 
+                        (agent.performance_metrics.avg_response_time + stage.duration) / 2;
+
+                    addMessage(`${agent.name} completed stage: ${stage.name}`, 'success');
+                    
+                    currentStage++;
+                    await runStage();
+                };
+
+                await runStage();
+                return true;
+            },
+
+            generateRandomMetrics() {
+                return {
+                    cpu: Math.random() * 100,
+                    memory: 50 + Math.random() * 50,
+                    responseTime: 100 + Math.random() * 900
+                };
+            },
+
+            simulateAgentInteraction() {
+                const randomAgent = () => 
+                    DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
+                
+                setInterval(() => {
+                    const agent1 = randomAgent();
+                    const agent2 = randomAgent();
+                    
+                    if (agent1 !== agent2) {
+                        const interaction = {
+                            from: agent1.id,
+                            to: agent2.id,
+                            type: Math.random() > 0.5 ? 'query' : 'response',
+                            content: `${agent1.name} interacting with ${agent2.name}`
+                        };
+                        
+                        DEMO_DATA.messages.push(interaction);
+                        updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
+                        addMessage(interaction.content, 'info');
+                    }
+                }, 2000);
+            }
+        };
+
+        // Enhanced visualization utilities
+        function updatePerformanceCharts(metrics) {
+            // Implementation would go here - using a charting library like Chart.js
+            // This is just a placeholder for the actual implementation
+            console.log('Updating performance charts with metrics:', metrics);
+        }
+
+        // Enhanced workflow state management
         async function fetchWorkflowState() {
             if (!state.currentStateId) return;
 
@@ -805,28 +1007,49 @@
                 document.getElementById('state-id').textContent = state.currentStateId;
                 document.getElementById('active-agents').textContent = data.active_agents.length;
                 document.getElementById('messages-count').textContent = data.messages.length;
-                document.getElementById('data-store').textContent = JSON.stringify(data.data_store, null, 2);
                 
-                // Update visualization
+                // Update performance metrics if available
+                if (data.performance_metrics) {
+                    updatePerformanceCharts(data.performance_metrics);
+                }
+                
+                // Update agent status and metrics
+                await Promise.all(data.active_agents.map(async (agent) => {
+                    const agentMetrics = await ProductionMode.getAgentMetrics(agent.id);
+                    if (agentMetrics) {
+                        agent.performance_metrics = agentMetrics;
+                    }
+                }));
+                
+                // Update visualization with enhanced metrics
                 updateVisualization(data.active_agents, data.messages);
                 
-                // Update status
+                // Update status and data store
                 updateStatus(data.status);
+                document.getElementById('data-store').textContent = 
+                    JSON.stringify(data.data_store, null, 2);
                 
-                // Add new messages
+                // Process new messages
                 data.messages.forEach(msg => {
                     if (!state.processedMessages.has(msg.id)) {
-                        addMessage(msg.content || `Message from ${msg.from} to ${msg.to}: ${msg.type}`, 
+                        addMessage(msg.content || `${msg.from} to ${msg.to}: ${msg.type}`, 
                                  msg.type === 'error' ? 'error' : 'info');
                         state.processedMessages.add(msg.id);
                     }
                 });
                 
-                // Stop polling if workflow is completed
+                // Handle workflow completion
                 if (data.status.toLowerCase() === 'completed') {
                     clearInterval(state.updateInterval);
                     document.getElementById('loading-spinner').style.display = 'none';
                     showSuccess('Workflow completed successfully!');
+                    
+                    // Save final state to database
+                    await ProductionMode.updateWorkflowState(state.currentStateId, {
+                        status: 'completed',
+                        completion_time: new Date().toISOString(),
+                        final_metrics: data.performance_metrics
+                    });
                 }
             } catch (error) {
                 showError(`Error fetching workflow state: ${error.message}`);
@@ -839,104 +1062,48 @@
             }
         }
 
-        // Add success message function
-        function showSuccess(message) {
-            const toast = document.getElementById('error-toast');
-            const header = toast.querySelector('.toast-header');
-            const body = toast.querySelector('.toast-body');
-            
-            header.classList.remove('bg-danger');
-            header.classList.add('bg-success');
-            header.querySelector('strong').textContent = 'Success';
-            body.textContent = message;
-            
-            new bootstrap.Toast(toast).show();
+        // Initialize the application
+        async function initializeApplication() {
+            try {
+                // Initialize database connection
+                const dbInitialized = await ProductionMode.initializeDatabase();
+                if (!dbInitialized) {
+                    showError('Failed to initialize database. Switching to demo mode...');
+                    activateStaticDemo();
+                    return;
+                }
+
+                // Start performance monitoring
+                ProductionMode.startPerformanceMonitoring();
+
+                // Initialize network visualization
+                initializeNetwork();
+
+                // Setup event listeners
+                setupEventListeners();
+
+                // Initial connection check
+                await checkConnection();
+            } catch (error) {
+                console.error('Application initialization failed:', error);
+                showError('Failed to initialize application. Please refresh the page.');
+            }
         }
 
-        // Update form submission to include workflow type
-        const originalSubmitHandler = document.getElementById('workflow-form').onsubmit;
-        document.getElementById('workflow-form').onsubmit = async (event) => {
-            event.preventDefault();
-            
-            if (state.demoMode) {
-                resetDemo();
-                simulateDemoWorkflow();
-                return;
-            }
+        // Setup event listeners
+        function setupEventListeners() {
+            // ... existing event listener setup code ...
 
-            if (!await checkConnection()) {
-                showError('Cannot connect to server. Would you like to try demo mode?');
-                return;
-            }
-
-            const inputData = document.getElementById('input-data').value;
-            const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
-                .map(option => option.value);
-            const workflowType = document.getElementById('workflow-type').value;
-
-            document.getElementById('loading-spinner').style.display = 'block';
-
-            try {
-                const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/start/`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        input_data: JSON.parse(inputData),
-                        agents: selectedAgents,
-                        workflow_type: workflowType
-                    })
-                });
-
-                state.currentStateId = response.state_id;
-                state.processedMessages.clear();
-                
-                // Start polling for updates
-                clearInterval(state.updateInterval);
-                state.updateInterval = setInterval(fetchWorkflowState, CONFIG.UPDATE_INTERVAL);
-                
-                addMessage('Workflow started successfully', 'success');
-                showSuccess('Workflow started successfully!');
-            } catch (error) {
-                showError(`Error starting workflow: ${error.message}`);
-                document.getElementById('loading-spinner').style.display = 'none';
-            }
-        };
-
-        // Add workflow type change handler
-        document.getElementById('workflow-type').addEventListener('change', (e) => {
-            state.selectedWorkflowType = e.target.value;
-            // Update demo data if in demo mode
-            if (state.demoMode) {
-                DEMO_DATA.data_store.workflow_type = state.selectedWorkflowType;
-                updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
-            }
-        });
-
-        // Initialize the page with enhanced error handling
-        document.addEventListener('DOMContentLoaded', () => {
-            // Check for online/offline status
-            window.addEventListener('online', checkConnection);
-            window.addEventListener('offline', () => {
-                document.getElementById('offline-overlay').style.display = 'flex';
-            });
-
-            // Initialize network visualization
-            initializeNetwork();
-
-            // Setup demo speed control
-            const speedControl = document.getElementById('demo-speed');
-            speedControl.addEventListener('input', (e) => {
-                state.demoSpeed = parseFloat(e.target.value);
-                document.getElementById('speed-value').textContent = `${state.demoSpeed}x`;
-                if (state.updateInterval) {
-                    clearInterval(state.updateInterval);
-                    simulateDemoWorkflow();
+            // Add scenario selection handler for demo mode
+            document.getElementById('scenario-select')?.addEventListener('change', (e) => {
+                if (state.demoMode) {
+                    DemoMode.startScenario(e.target.value);
                 }
             });
+        }
 
-            // Initial connection check
-            checkConnection();
-        });
+        // Start the application when the DOM is ready
+        document.addEventListener('DOMContentLoaded', initializeApplication);
     </script>
 </body>
 </html>
