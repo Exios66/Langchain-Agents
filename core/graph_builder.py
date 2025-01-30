@@ -23,29 +23,77 @@ def build_graph() -> StateGraph:
     graph = StateGraph(State)
     
     # Create agent instances
-    athena_agent = create_athena_agent()
-    milgrim_agent = create_milgrim_agent()
-    yaat_agent = create_yaat_agent()
+    agents = {
+        "professor_athena": create_athena_agent(),
+        "dr_milgrim": create_milgrim_agent(),
+        "yaat": create_yaat_agent()
+    }
     
-    # Register nodes
-    graph.add_node("athena", athena_agent)
-    graph.add_node("milgrim", milgrim_agent)
-    graph.add_node("yaat", yaat_agent)
+    # Register all possible nodes
+    for agent_name, agent in agents.items():
+        graph.add_node(agent_name, agent)
     graph.add_node("human_review", human_review)
     graph.add_node("stream_output", stream_output)
     graph.add_node("error_handler", error_handler)
     
-    # Define the flow
-    graph.add_edge(START, "athena")
-    graph.add_edge("athena", "milgrim")
-    graph.add_edge("milgrim", "yaat")
-    graph.add_edge("yaat", "human_review")
+    def get_next_agent(state: State) -> AgentState:
+        """Determine the next agent based on workflow type and current state."""
+        workflow_type = state['data_store'].get('workflow_type', 'sequential')
+        requested_agents = state['data_store'].get('agents', [])
+        current_agent = state['data_store'].get('current_agent', None)
+        
+        if not requested_agents:
+            return {"next": "error_handler"}
+            
+        if workflow_type == "parallel":
+            # In parallel mode, all agents run independently
+            # This is a simplified version - in reality, you'd want to spawn parallel tasks
+            remaining_agents = [a for a in requested_agents if a not in state['data_store'].get('completed_agents', [])]
+            if remaining_agents:
+                next_agent = remaining_agents[0]
+                if 'completed_agents' not in state['data_store']:
+                    state['data_store']['completed_agents'] = []
+                state['data_store']['completed_agents'].append(next_agent)
+                return {"next": next_agent}
+            return {"next": "human_review"}
+            
+        elif workflow_type == "sequential":
+            # In sequential mode, agents run one after another
+            if current_agent is None:
+                if requested_agents:
+                    state['data_store']['current_agent'] = requested_agents[0]
+                    return {"next": requested_agents[0]}
+            else:
+                current_idx = requested_agents.index(current_agent)
+                if current_idx + 1 < len(requested_agents):
+                    next_agent = requested_agents[current_idx + 1]
+                    state['data_store']['current_agent'] = next_agent
+                    return {"next": next_agent}
+            return {"next": "human_review"}
+            
+        elif workflow_type == "hybrid":
+            # In hybrid mode, some agents run in parallel and others sequentially
+            # This is a simplified version that treats it as sequential
+            return get_next_agent(state)  # Reuse sequential logic for now
+            
+        return {"next": "error_handler"}
     
-    # Add conditional routing
-    graph.add_node("route", route_review)
-    graph.add_edge("human_review", "route")
+    # Add dynamic routing
+    graph.add_node("route_agents", get_next_agent)
+    
+    # Define the flow
+    graph.add_edge(START, "route_agents")
+    
+    # Connect each agent to the router
+    for agent_name in agents:
+        graph.add_edge("route_agents", agent_name)
+        graph.add_edge(agent_name, "route_agents")
+    
+    # Add review routing
+    graph.add_node("route_review", route_review)
+    graph.add_edge("human_review", "route_review")
     graph.add_conditional_edges(
-        "route",
+        "route_review",
         lambda x: x["next"],
         {
             "stream_output": "stream_output",
