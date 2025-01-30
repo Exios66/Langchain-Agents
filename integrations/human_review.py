@@ -6,6 +6,12 @@ def validate_agent_output(state: State) -> bool:
     """Validate the outputs from all agents that ran."""
     workflow_type = state['data_store'].get('workflow_type', 'sequential')
     requested_agents = state['data_store'].get('agents', [])
+    completed_agents = state['data_store'].get('completed_agents', [])
+    
+    # Ensure all requested agents have completed
+    if not completed_agents or set(completed_agents) != set(requested_agents):
+        state['data_store']['error'] = "Not all requested agents have completed"
+        return False
     
     # Check each agent's analysis
     for agent in requested_agents:
@@ -16,16 +22,23 @@ def validate_agent_output(state: State) -> bool:
             state['data_store']['error'] = f"Missing analysis from agent: {agent}"
             return False
             
-        # Validate analysis has required fields
+        # Validate analysis has required fields and non-empty recommendations
         if not all(key in analysis for key in ['recommendations']):
             state['data_store']['error'] = f"Incomplete analysis from agent: {agent}"
             return False
             
-        # For parallel workflows, ensure all agents have completed
-        if workflow_type == 'parallel':
-            completed_agents = state['data_store'].get('completed_agents', [])
-            if agent not in completed_agents:
-                state['data_store']['error'] = f"Incomplete execution: {agent} did not finish"
+        if not analysis['recommendations']:
+            state['data_store']['error'] = f"No recommendations provided by agent: {agent}"
+            return False
+    
+    # Additional validation for parallel workflows
+    if workflow_type == 'parallel':
+        # Ensure all parallel executions were independent
+        for agent in requested_agents:
+            analysis_key = f"{agent.replace('professor_', '').replace('dr_', '')}_analysis"
+            analysis = state['data_store'].get(analysis_key)
+            if analysis.get('previous_analyses_integrated'):
+                state['data_store']['error'] = f"Agent {agent} had dependencies in parallel workflow"
                 return False
     
     return True
