@@ -2,9 +2,41 @@
 from core.workflow import WorkflowManager
 # run.py
 import uvicorn
+import socket
+from typing import Optional
+
+def find_available_port(start_port: int = 8000, max_port: int = 8020) -> Optional[int]:
+    """Find an available port in the given range."""
+    for port in range(start_port, max_port + 1):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind(('0.0.0.0', port))
+                return port
+            except OSError:
+                continue
+    return None
 
 if __name__ == "__main__":
-    uvicorn.run("api.endpoints:app", host="0.0.0.0", port=8000, reload=True)
+    port = find_available_port()
+    if port is None:
+        print("Error: No available ports found in range 8000-8020")
+        exit(1)
+        
+    print(f"Starting server on port {port}")
+    config = uvicorn.Config(
+        "api.endpoints:app",
+        host="0.0.0.0",
+        port=port,
+        reload=True,
+        log_level="info"
+    )
+    server = uvicorn.Server(config)
+    try:
+        server.run()
+    except Exception as e:
+        print(f"Error starting server: {e}")
+        exit(1)
+
 def main():
     """Main execution function."""
     # Initialize workflow
