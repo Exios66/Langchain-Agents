@@ -1,5 +1,5 @@
 # core/graph_builder.py
-from typing import Annotated, Sequence
+from typing import Annotated, Sequence, TypedDict, Union
 from langgraph.graph import StateGraph, START, END
 from core.state import State
 from agents.profiles.professor_athena import create_athena_agent
@@ -9,9 +9,13 @@ from integrations.human_review import human_review
 from integrations.streaming import stream_output
 from integrations.error_handling import error_handler
 
-def should_stream(state: State) -> Sequence[str]:
-    """Determine if output should be streamed."""
-    return ["stream_output"] if state['data_store'].get('approved', False) else ["error_handler"]
+class AgentState(TypedDict):
+    next: str
+
+def route_review(state: State) -> AgentState:
+    """Route based on review outcome."""
+    next_step = "stream_output" if state['data_store'].get('approved', False) else "error_handler"
+    return {"next": next_step}
 
 def build_graph() -> StateGraph:
     """Build and return the workflow graph."""
@@ -37,8 +41,19 @@ def build_graph() -> StateGraph:
     graph.add_edge("milgrim", "yaat")
     graph.add_edge("yaat", "human_review")
     
-    # Conditional branching
-    graph.add_edge("human_review", should_stream)
+    # Add conditional routing
+    graph.add_node("route", route_review)
+    graph.add_edge("human_review", "route")
+    graph.add_conditional_edges(
+        "route",
+        lambda x: x["next"],
+        {
+            "stream_output": "stream_output",
+            "error_handler": "error_handler"
+        }
+    )
+    
+    # Final edges
     graph.add_edge("stream_output", END)
     graph.add_edge("error_handler", END)
     
