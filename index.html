@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Workflow Interface</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        #workflow-form {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        #response-container {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            max-width: 600px;
+            margin: auto;
+            text-align: left;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .message {
+            background: #ddd;
+            padding: 8px;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Multi-Agent Workflow Interface</h1>
+
+    <form id="workflow-form">
+        <input type="text" id="input-data" placeholder="Enter input data" required>
+        <button type="submit">Start Workflow</button>
+    </form>
+
+    <h2>Workflow Response</h2>
+    <div id="response-container">
+        <p><strong>State ID:</strong> <span id="state-id"></span></p>
+        <p><strong>Messages:</strong></p>
+        <div id="messages"></div>
+        <p><strong>Data Store:</strong></p>
+        <pre id="data-store"></pre>
+    </div>
+
+    <script>
+        document.getElementById('workflow-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const inputData = document.getElementById('input-data').value;
+            
+            try {
+                // Start workflow
+                const response = await fetch('http://127.0.0.1:8000/workflow/start/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ input_data: inputData })
+                });
+
+                const data = await response.json();
+                const stateId = data.state_id;
+                document.getElementById('state-id').innerText = stateId;
+
+                // Fetch workflow state
+                const stateResponse = await fetch(`http://127.0.0.1:8000/workflow/${stateId}/`);
+                const stateData = await stateResponse.json();
+
+                // Display messages
+                document.getElementById('messages').innerHTML = "";
+                stateData.messages.forEach(msg => {
+                    let messageElement = document.createElement("div");
+                    messageElement.classList.add("message");
+                    messageElement.innerText = msg;
+                    document.getElementById('messages').appendChild(messageElement);
+                });
+
+                // Display data store
+                document.getElementById('data-store').innerText = JSON.stringify(stateData.data_store, null, 2);
+
+            } catch (error) {
+                alert("Error starting workflow: " + error.message);
+            }
+        });
+    </script>
+
+</body>
+</html>
