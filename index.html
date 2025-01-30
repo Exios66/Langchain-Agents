@@ -4,8 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multi-Agent Workflow Interface</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style">
+    
+    <!-- Primary stylesheets with fallback handling -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" 
+          onerror="handleStyleError(this, 'Bootstrap')">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"
+          onerror="handleStyleError(this, 'Font Awesome')">
+          
+    <!-- Fallback styles for offline mode -->
+    <style id="fallback-styles">
+        /* Minimal fallback styles if CDN resources fail */
+        .cdn-error { 
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid #dc3545;
+            border-radius: 4px;
+            color: #dc3545;
+            background: #f8d7da;
+        }
+    </style>
+
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -173,9 +195,84 @@
             overflow: auto;
             max-height: 300px;
         }
+
+        .demo-mode-banner {
+            background-color: #ffc107;
+            color: #000;
+            text-align: center;
+            padding: 0.5rem;
+            font-weight: bold;
+            display: none;
+        }
+
+        .offline-mode {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .offline-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .offline-message {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 80%;
+        }
+
+        .resource-error {
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        #static-demo-controls {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .demo-speed-control {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
     </style>
 </head>
 <body>
+    <!-- Demo Mode Banner -->
+    <div class="demo-mode-banner" id="demo-mode-banner">
+        Running in Demo Mode - No Backend Connection Required
+    </div>
+
+    <!-- Offline Overlay -->
+    <div class="offline-overlay" id="offline-overlay">
+        <div class="offline-message">
+            <h4>You're Offline</h4>
+            <p>Some features may be limited. Check your internet connection.</p>
+            <button class="btn btn-primary" onclick="activateStaticDemo()">
+                Continue in Demo Mode
+            </button>
+        </div>
+    </div>
+
+    <!-- Resource Error Container -->
+    <div id="resource-errors" class="container mt-3"></div>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
@@ -277,6 +374,23 @@
                 </div>
             </div>
         </div>
+
+        <!-- Static Demo Controls -->
+        <div id="static-demo-controls" class="card">
+            <div class="card-header">
+                <i class="fas fa-theater-masks me-2"></i>Demo Controls
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="demo-speed" class="form-label">Simulation Speed</label>
+                    <input type="range" class="demo-speed-control" id="demo-speed" min="0.5" max="2" step="0.1" value="1">
+                    <span id="speed-value">1x</span>
+                </div>
+                <button class="btn btn-secondary" onclick="resetDemo()">
+                    <i class="fas fa-redo me-2"></i>Reset Demo
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Loading Spinner -->
@@ -298,76 +412,151 @@
     </div>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
-    
+    <!-- Load scripts with error handling -->
     <script>
-        // Global variables
-        let currentStateId = null;
-        let networkInstance = null;
-        let updateInterval = null;
-        const toast = new bootstrap.Toast(document.getElementById('error-toast'));
+        // Resource loading error handling
+        function handleStyleError(stylesheet, name) {
+            const errorsContainer = document.getElementById('resource-errors');
+            const error = document.createElement('div');
+            error.className = 'resource-error alert alert-warning';
+            error.innerHTML = `Failed to load ${name}. Some styles may be missing.`;
+            errorsContainer.appendChild(error);
+        }
 
-        // Update base URL to use repository-relative paths
-        const API_BASE_URL = '/Langchain-Agents/api'; // Updated to use repository-relative path
-
-        // Add error handling for library loading
-        window.addEventListener('error', function(e) {
-            if (e.target.tagName === 'SCRIPT') {
-                showError('Failed to load required resources. Please check your connection.');
+        function handleScriptError(script, name) {
+            const errorsContainer = document.getElementById('resource-errors');
+            const error = document.createElement('div');
+            error.className = 'resource-error alert alert-danger';
+            error.innerHTML = `Failed to load ${name}. Some features may not work.`;
+            errorsContainer.appendChild(error);
+            
+            if (name === 'Visualization Library') {
+                document.getElementById('network-graph').innerHTML = 
+                    '<div class="alert alert-warning">Visualization unavailable. Please check your connection.</div>';
             }
-        }, true);
+        }
 
-        // Initialize network visualization
+        // Dynamically load scripts with error handling
+        function loadScript(url, name) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = () => {
+                    handleScriptError(script, name);
+                    reject(new Error(`Failed to load ${name}`));
+                };
+                document.body.appendChild(script);
+            });
+        }
+    </script>
+
+    <!-- Load required libraries -->
+    <script>
+        Promise.all([
+            loadScript('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js', 'Bootstrap'),
+            loadScript('https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js', 'Visualization Library'),
+            loadScript('https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js', 'Utilities')
+        ]).catch(error => {
+            console.error('Failed to load some required resources:', error);
+        });
+    </script>
+
+    <!-- Main application script -->
+    <script>
+        // Configuration
+        const CONFIG = {
+            API_BASE_URL: '/Langchain-Agents/api',
+            DEMO_MODE: false,
+            UPDATE_INTERVAL: 1000,
+            MAX_RETRIES: 3,
+            RETRY_DELAY: 2000
+        };
+
+        // Static demo data
+        const DEMO_DATA = {
+            agents: [
+                { id: 'agent1', name: 'Professor Athena', status: 'active', tasks_completed: 5 },
+                { id: 'agent2', name: 'Dr. Milgrim', status: 'active', tasks_completed: 3 },
+                { id: 'agent3', name: 'YAAT', status: 'active', tasks_completed: 4 }
+            ],
+            messages: [
+                { from: 'agent1', to: 'agent2', type: 'query' },
+                { from: 'agent2', to: 'agent3', type: 'response' },
+                { from: 'agent3', to: 'agent1', type: 'update' }
+            ],
+            status: 'running',
+            data_store: {
+                current_task: 'Analyzing data patterns',
+                progress: 75,
+                results: []
+            }
+        };
+
+        // Global state
+        const state = {
+            demoMode: false,
+            demoSpeed: 1,
+            currentStateId: null,
+            networkInstance: null,
+            updateInterval: null,
+            retryCount: 0
+        };
+
+        // Initialize network visualization with error handling
         function initializeNetwork() {
             const container = document.getElementById('network-graph');
             if (typeof vis === 'undefined') {
-                container.innerHTML = '<div class="alert alert-warning">Visualization library failed to load</div>';
+                container.innerHTML = '<div class="alert alert-warning">Visualization library not available</div>';
                 return;
             }
-            const options = {
-                nodes: {
-                    shape: 'dot',
-                    size: 30,
-                    font: {
-                        size: 14,
-                        color: '#333'
-                    },
-                    borderWidth: 2,
-                    shadow: true
-                },
-                edges: {
-                    width: 2,
-                    color: { inherit: 'from' },
-                    smooth: {
-                        type: 'continuous'
-                    },
-                    arrows: {
-                        to: { enabled: true, scaleFactor: 1 }
-                    }
-                },
-                physics: {
-                    stabilization: false,
-                    barnesHut: {
-                        gravitationalConstant: -80000,
-                        springConstant: 0.001,
-                        springLength: 200
-                    }
-                }
-            };
 
-            const data = {
-                nodes: new vis.DataSet([]),
-                edges: new vis.DataSet([])
-            };
+            try {
+                const options = {
+                    nodes: {
+                        shape: 'dot',
+                        size: 30,
+                        font: {
+                            size: 14,
+                            color: '#333'
+                        },
+                        borderWidth: 2,
+                        shadow: true
+                    },
+                    edges: {
+                        width: 2,
+                        color: { inherit: 'from' },
+                        smooth: {
+                            type: 'continuous'
+                        },
+                        arrows: {
+                            to: { enabled: true, scaleFactor: 1 }
+                        }
+                    },
+                    physics: {
+                        stabilization: false,
+                        barnesHut: {
+                            gravitationalConstant: -80000,
+                            springConstant: 0.001,
+                            springLength: 200
+                        }
+                    }
+                };
 
-            networkInstance = new vis.Network(container, data, options);
+                const data = {
+                    nodes: new vis.DataSet([]),
+                    edges: new vis.DataSet([])
+                };
+
+                state.networkInstance = new vis.Network(container, data, options);
+            } catch (error) {
+                container.innerHTML = `<div class="alert alert-danger">Failed to initialize visualization: ${error.message}</div>`;
+            }
         }
 
         // Update network visualization
         function updateVisualization(agents, messages) {
-            if (!networkInstance) return;
+            if (!state.networkInstance) return;
 
             const nodes = new vis.DataSet();
             const edges = new vis.DataSet();
@@ -396,7 +585,7 @@
                 });
             });
 
-            networkInstance.setData({ nodes, edges });
+            state.networkInstance.setData({ nodes, edges });
         }
 
         // Add message to log
@@ -441,70 +630,141 @@
         // Show error message
         function showError(message) {
             document.getElementById('error-message').textContent = message;
-            toast.show();
+            new bootstrap.Toast(document.getElementById('error-toast')).show();
         }
 
-        // Fetch workflow state
-        async function fetchWorkflowState() {
-            if (!currentStateId) return;
+        // Static demo mode functions
+        function activateStaticDemo() {
+            state.demoMode = true;
+            document.getElementById('demo-mode-banner').style.display = 'block';
+            document.getElementById('static-demo-controls').style.display = 'block';
+            document.getElementById('offline-overlay').style.display = 'none';
+            
+            // Update UI for demo mode
+            updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
+            updateStatus('running');
+            addMessage('Demo mode activated', 'info');
+            
+            // Start demo simulation
+            simulateDemoWorkflow();
+        }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/workflow/${currentStateId}/`);
-                if (!response.ok) throw new Error('Failed to fetch workflow state');
-
-                const data = await response.json();
+        function simulateDemoWorkflow() {
+            let step = 0;
+            const maxSteps = 10;
+            
+            state.updateInterval = setInterval(() => {
+                step++;
+                // Simulate workflow progress
+                const progress = (step / maxSteps) * 100;
+                DEMO_DATA.data_store.progress = progress;
                 
-                // Update UI elements
-                document.getElementById('state-id').textContent = currentStateId;
-                document.getElementById('active-agents').textContent = data.active_agents.length;
-                document.getElementById('messages-count').textContent = data.messages.length;
-                document.getElementById('data-store').textContent = JSON.stringify(data.data_store, null, 2);
+                // Update visualization with random new messages
+                const newMessage = {
+                    from: DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)].id,
+                    to: DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)].id,
+                    type: ['query', 'response', 'update'][Math.floor(Math.random() * 3)]
+                };
+                DEMO_DATA.messages.push(newMessage);
                 
-                // Update visualization
-                updateVisualization(data.active_agents, data.messages);
+                // Update UI
+                updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
+                document.getElementById('messages-count').textContent = DEMO_DATA.messages.length;
+                document.getElementById('data-store').textContent = JSON.stringify(DEMO_DATA.data_store, null, 2);
                 
-                // Update status
-                updateStatus(data.status);
-                
-                // Add new messages
-                data.messages.forEach(msg => addMessage(msg));
-                
-                // Stop polling if workflow is completed
-                if (data.status.toLowerCase() === 'completed') {
-                    clearInterval(updateInterval);
-                    document.getElementById('loading-spinner').style.display = 'none';
+                if (step >= maxSteps) {
+                    clearInterval(state.updateInterval);
+                    updateStatus('completed');
+                    addMessage('Demo workflow completed', 'success');
                 }
-            } catch (error) {
-                showError(`Error fetching workflow state: ${error.message}`);
+            }, CONFIG.UPDATE_INTERVAL * state.demoSpeed);
+        }
+
+        function resetDemo() {
+            clearInterval(state.updateInterval);
+            DEMO_DATA.messages = DEMO_DATA.messages.slice(0, 3);
+            DEMO_DATA.data_store.progress = 0;
+            updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
+            updateStatus('not_started');
+            document.getElementById('messages').innerHTML = '';
+            addMessage('Demo reset', 'info');
+        }
+
+        // Enhanced error handling and retry logic
+        async function fetchWithRetry(url, options = {}) {
+            for (let i = 0; i < CONFIG.MAX_RETRIES; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === CONFIG.MAX_RETRIES - 1) throw error;
+                    await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
+                }
             }
         }
 
-        // Add connection status check
+        // Enhanced connection check with offline mode handling
         async function checkConnection() {
             try {
-                const response = await fetch(`${API_BASE_URL}/health/`);
+                const response = await fetch(`${CONFIG.API_BASE_URL}/health/`);
                 if (!response.ok) throw new Error('API unavailable');
+                
+                document.getElementById('connection-status').innerHTML = `
+                    <i class="fas fa-circle text-success me-2"></i>Connected
+                `;
                 return true;
             } catch (error) {
                 document.getElementById('connection-status').innerHTML = `
                     <i class="fas fa-circle text-danger me-2"></i>Disconnected
                     <small class="text-warning">(${error.message})</small>
                 `;
+                
+                // Show offline overlay if not in demo mode
+                if (!state.demoMode) {
+                    document.getElementById('offline-overlay').style.display = 'flex';
+                }
                 return false;
             }
         }
 
-        // Initialize the page
+        // Initialize the page with enhanced error handling
         document.addEventListener('DOMContentLoaded', () => {
+            // Check for online/offline status
+            window.addEventListener('online', checkConnection);
+            window.addEventListener('offline', () => {
+                document.getElementById('offline-overlay').style.display = 'flex';
+            });
+
+            // Initialize network visualization
             initializeNetwork();
 
-            // Handle form submission
+            // Setup demo speed control
+            const speedControl = document.getElementById('demo-speed');
+            speedControl.addEventListener('input', (e) => {
+                state.demoSpeed = parseFloat(e.target.value);
+                document.getElementById('speed-value').textContent = `${state.demoSpeed}x`;
+                if (state.updateInterval) {
+                    clearInterval(state.updateInterval);
+                    simulateDemoWorkflow();
+                }
+            });
+
+            // Enhanced form submission with connection check
             document.getElementById('workflow-form').addEventListener('submit', async (event) => {
                 event.preventDefault();
-                if (!await checkConnection()) {
-                    showError('Cannot connect to server. Please check your connection.');
+                
+                if (state.demoMode) {
+                    resetDemo();
+                    simulateDemoWorkflow();
                     return;
                 }
+
+                if (!await checkConnection()) {
+                    showError('Cannot connect to server. Would you like to try demo mode?');
+                    return;
+                }
+
                 const inputData = document.getElementById('input-data').value;
                 const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
                     .map(option => option.value);
@@ -513,7 +773,7 @@
 
                 try {
                     // Start workflow
-                    const response = await fetch(`${API_BASE_URL}/workflow/start/`, {
+                    const response = await fetch(`${CONFIG.API_BASE_URL}/workflow/start/`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -525,11 +785,11 @@
                     if (!response.ok) throw new Error('Failed to start workflow');
 
                     const data = await response.json();
-                    currentStateId = data.state_id;
+                    state.currentStateId = data.state_id;
                     
                     // Start polling for updates
-                    clearInterval(updateInterval);
-                    updateInterval = setInterval(fetchWorkflowState, 1000);
+                    clearInterval(state.updateInterval);
+                    state.updateInterval = setInterval(fetchWorkflowState, CONFIG.UPDATE_INTERVAL);
                     
                     addMessage('Workflow started successfully', 'success');
                 } catch (error) {
@@ -542,6 +802,9 @@
             document.getElementById('clear-log').addEventListener('click', () => {
                 document.getElementById('messages').innerHTML = '';
             });
+
+            // Initial connection check
+            checkConnection();
         });
     </script>
 </body>
