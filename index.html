@@ -309,12 +309,23 @@
         let updateInterval = null;
         const toast = new bootstrap.Toast(document.getElementById('error-toast'));
 
-        // Update these URLs to point to your actual API endpoint
-        const API_BASE_URL = 'https://your-api-domain.com'; // Replace with your actual API domain
+        // Update base URL to use repository-relative paths
+        const API_BASE_URL = '/Langchain-Agents/api'; // Updated to use repository-relative path
+
+        // Add error handling for library loading
+        window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'SCRIPT') {
+                showError('Failed to load required resources. Please check your connection.');
+            }
+        }, true);
 
         // Initialize network visualization
         function initializeNetwork() {
             const container = document.getElementById('network-graph');
+            if (typeof vis === 'undefined') {
+                container.innerHTML = '<div class="alert alert-warning">Visualization library failed to load</div>';
+                return;
+            }
             const options = {
                 nodes: {
                     shape: 'dot',
@@ -468,6 +479,21 @@
             }
         }
 
+        // Add connection status check
+        async function checkConnection() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/health/`);
+                if (!response.ok) throw new Error('API unavailable');
+                return true;
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = `
+                    <i class="fas fa-circle text-danger me-2"></i>Disconnected
+                    <small class="text-warning">(${error.message})</small>
+                `;
+                return false;
+            }
+        }
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', () => {
             initializeNetwork();
@@ -475,6 +501,10 @@
             // Handle form submission
             document.getElementById('workflow-form').addEventListener('submit', async (event) => {
                 event.preventDefault();
+                if (!await checkConnection()) {
+                    showError('Cannot connect to server. Please check your connection.');
+                    return;
+                }
                 const inputData = document.getElementById('input-data').value;
                 const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
                     .map(option => option.value);
@@ -512,14 +542,6 @@
             document.getElementById('clear-log').addEventListener('click', () => {
                 document.getElementById('messages').innerHTML = '';
             });
-
-            // Check server connection
-            fetch(`${API_BASE_URL}/health/`)
-                .catch(() => {
-                    document.getElementById('connection-status').innerHTML = `
-                        <i class="fas fa-circle text-danger me-2"></i>Disconnected
-                    `;
-                });
         });
     </script>
 </body>
