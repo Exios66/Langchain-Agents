@@ -251,6 +251,130 @@
             width: 100%;
             margin-top: 0.5rem;
         }
+
+        /* Performance metrics responsive styles */
+        @media (max-width: 1200px) {
+            .navbar .performance-metric {
+                margin-right: 0.5rem !important;
+            }
+            .navbar .performance-metric small {
+                font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .navbar .performance-metrics-container {
+                display: none !important;
+            }
+            .navbar .performance-metrics-dropdown {
+                display: block !important;
+            }
+        }
+
+        .performance-metrics-dropdown .dropdown-menu {
+            min-width: 300px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+            background-color: var(--primary-color);
+            border: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .performance-metrics-dropdown .metric-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .performance-metrics-dropdown .metric-item:last-child {
+            border-bottom: none;
+        }
+
+        .performance-metrics-dropdown .metric-label {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.875rem;
+        }
+
+        .performance-metrics-dropdown .metric-value {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Keyboard shortcuts styling */
+        kbd {
+            display: inline-block;
+            padding: 0.2em 0.4em;
+            font-size: 0.85em;
+            font-weight: 700;
+            line-height: 1;
+            color: #fff;
+            background-color: var(--primary-color);
+            border-radius: 3px;
+            box-shadow: inset 0 -2px 0 rgba(0,0,0,0.25);
+            white-space: nowrap;
+        }
+
+        .shortcuts-table td {
+            vertical-align: middle;
+            padding: 0.5rem;
+        }
+
+        .shortcuts-table kbd {
+            margin-right: 0.5rem;
+        }
+
+        /* Accessibility improvements */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+
+        /* Focus indicators */
+        :focus {
+            outline: 2px solid var(--secondary-color) !important;
+            outline-offset: 2px !important;
+        }
+
+        .btn:focus {
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.5) !important;
+        }
+
+        /* Skip link for keyboard navigation */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px;
+            z-index: 1051;
+            transition: top 0.2s;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* High contrast mode support */
+        @media (forced-colors: active) {
+            .btn-primary {
+                border: 2px solid currentColor;
+            }
+            
+            .progress {
+                border: 1px solid currentColor;
+            }
+            
+            .card {
+                border: 1px solid currentColor;
+            }
+        }
     </style>
 </head>
 <body>
@@ -273,6 +397,9 @@
     <!-- Resource Error Container -->
     <div id="resource-errors" class="container mt-3"></div>
 
+    <!-- Skip Link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
@@ -280,35 +407,74 @@
                 <i class="fas fa-robot me-2"></i>Multi-Agent Workflow System
             </a>
             <div class="d-flex align-items-center">
-                <div class="me-4">
-                    <span class="badge bg-success" id="health-status">Healthy</span>
+                <!-- Desktop Performance Metrics -->
+                <div class="performance-metrics-container d-none d-lg-flex align-items-center">
+                    <div class="performance-metric me-4">
+                        <span class="badge bg-success" id="health-status-desktop">Healthy</span>
+                    </div>
+                    <div class="performance-metric me-4 text-light">
+                        <small>
+                            <i class="fas fa-clock me-1"></i>Uptime: <span id="uptime-desktop">0s</span>
+                        </small>
+                    </div>
+                    <div class="performance-metric me-4 text-light">
+                        <small>
+                            <i class="fas fa-exclamation-triangle me-1"></i>Errors: <span id="error-count-desktop">0</span>
+                        </small>
+                    </div>
+                    <div class="performance-metric me-4 text-light">
+                        <small>
+                            <i class="fas fa-exclamation me-1"></i>Warnings: <span id="warning-count-desktop">0</span>
+                        </small>
+                    </div>
+                    <div class="performance-metric me-4 text-light">
+                        <small>
+                            <i class="fas fa-exchange-alt me-1"></i>API Calls: <span id="api-calls-desktop">0</span>
+                        </small>
+                    </div>
+                    <div class="performance-metric me-4 text-light">
+                        <small>
+                            <i class="fas fa-tachometer-alt me-1"></i>Avg Response: <span id="avg-response-time-desktop">0ms</span>
+                        </small>
+                    </div>
                 </div>
-                <div class="me-4 text-light">
-                    <small>
-                        <i class="fas fa-clock me-1"></i>Uptime: <span id="uptime">0s</span>
-                    </small>
+
+                <!-- Mobile Performance Metrics Dropdown -->
+                <div class="performance-metrics-dropdown d-lg-none">
+                    <button class="btn btn-dark dropdown-toggle" type="button" id="performanceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-chart-line me-2"></i>Metrics
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="performanceDropdown">
+                        <div class="metric-item">
+                            <div class="metric-label">Health Status</div>
+                            <div class="metric-value">
+                                <span class="badge bg-success" id="health-status-mobile">Healthy</span>
+                            </div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Uptime</div>
+                            <div class="metric-value" id="uptime-mobile">0s</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Errors</div>
+                            <div class="metric-value" id="error-count-mobile">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Warnings</div>
+                            <div class="metric-value" id="warning-count-mobile">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">API Calls</div>
+                            <div class="metric-value" id="api-calls-mobile">0</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-label">Avg Response Time</div>
+                            <div class="metric-value" id="avg-response-time-mobile">0ms</div>
+                        </div>
+                    </div>
                 </div>
-                <div class="me-4 text-light">
-                    <small>
-                        <i class="fas fa-exclamation-triangle me-1"></i>Errors: <span id="error-count">0</span>
-                    </small>
-                </div>
-                <div class="me-4 text-light">
-                    <small>
-                        <i class="fas fa-exclamation me-1"></i>Warnings: <span id="warning-count">0</span>
-                    </small>
-                </div>
-                <div class="me-4 text-light">
-                    <small>
-                        <i class="fas fa-exchange-alt me-1"></i>API Calls: <span id="api-calls">0</span>
-                    </small>
-                </div>
-                <div class="me-4 text-light">
-                    <small>
-                        <i class="fas fa-tachometer-alt me-1"></i>Avg Response: <span id="avg-response-time">0ms</span>
-                    </small>
-                </div>
-                <span class="text-light" id="connection-status">
+
+                <span class="text-light ms-3" id="connection-status">
                     <i class="fas fa-circle text-success me-2"></i>Connected
                 </span>
             </div>
@@ -1186,25 +1352,29 @@
                     avgResponseTime: Math.round(this.metrics.avgResponseTime)
                 };
 
-                // Update performance metrics in UI
-                document.getElementById('uptime').textContent = `${metrics.uptime}s`;
-                document.getElementById('error-count').textContent = metrics.errors;
-                document.getElementById('warning-count').textContent = metrics.warnings;
-                document.getElementById('api-calls').textContent = metrics.apiCalls;
-                document.getElementById('avg-response-time').textContent = `${metrics.avgResponseTime}ms`;
+                // Update desktop metrics
+                document.getElementById('uptime-desktop').textContent = `${metrics.uptime}s`;
+                document.getElementById('error-count-desktop').textContent = metrics.errors;
+                document.getElementById('warning-count-desktop').textContent = metrics.warnings;
+                document.getElementById('api-calls-desktop').textContent = metrics.apiCalls;
+                document.getElementById('avg-response-time-desktop').textContent = `${metrics.avgResponseTime}ms`;
 
-                // Update status indicators
-                const healthStatus = document.getElementById('health-status');
-                if (metrics.errors > 10) {
-                    healthStatus.className = 'badge bg-danger';
-                    healthStatus.textContent = 'Critical';
-                } else if (metrics.errors > 5) {
-                    healthStatus.className = 'badge bg-warning';
-                    healthStatus.textContent = 'Warning';
-                } else {
-                    healthStatus.className = 'badge bg-success';
-                    healthStatus.textContent = 'Healthy';
-                }
+                // Update mobile metrics
+                document.getElementById('uptime-mobile').textContent = `${metrics.uptime}s`;
+                document.getElementById('error-count-mobile').textContent = metrics.errors;
+                document.getElementById('warning-count-mobile').textContent = metrics.warnings;
+                document.getElementById('api-calls-mobile').textContent = metrics.apiCalls;
+                document.getElementById('avg-response-time-mobile').textContent = `${metrics.avgResponseTime}ms`;
+
+                // Update status indicators for both desktop and mobile
+                const healthStatus = metrics.errors > 10 ? 'Critical' : metrics.errors > 5 ? 'Warning' : 'Healthy';
+                const healthClass = metrics.errors > 10 ? 'bg-danger' : metrics.errors > 5 ? 'bg-warning' : 'bg-success';
+                
+                ['desktop', 'mobile'].forEach(device => {
+                    const statusElement = document.getElementById(`health-status-${device}`);
+                    statusElement.className = `badge ${healthClass}`;
+                    statusElement.textContent = healthStatus;
+                });
 
                 // Log to console if significant changes
                 if (metrics.errors > 0 && metrics.errors % 5 === 0) {
@@ -1280,6 +1450,199 @@
             state: state,
             config: CONFIG
         };
+
+        // Keyboard shortcuts
+        const KeyboardShortcuts = {
+            shortcuts: {
+                'ctrl+enter': {
+                    description: 'Start/Stop Workflow',
+                    handler: () => {
+                        const startButton = document.getElementById('start-workflow-btn');
+                        if (startButton && !startButton.disabled) {
+                            startButton.click();
+                        }
+                    }
+                },
+                'ctrl+d': {
+                    description: 'Toggle Demo Mode',
+                    handler: () => {
+                        const modeSwitch = document.getElementById('mode-switch');
+                        modeSwitch.checked = !modeSwitch.checked;
+                        modeSwitch.dispatchEvent(new Event('change'));
+                    }
+                },
+                'ctrl+m': {
+                    description: 'Toggle Metrics',
+                    handler: () => {
+                        const dropdown = document.getElementById('performanceDropdown');
+                        if (window.innerWidth < 992) { // Mobile breakpoint
+                            dropdown.click();
+                        }
+                    }
+                },
+                'ctrl+r': {
+                    description: 'Reset View',
+                    handler: () => {
+                        const resetButton = document.getElementById('reset-view');
+                        resetButton.click();
+                    }
+                },
+                'ctrl+l': {
+                    description: 'Clear Log',
+                    handler: () => {
+                        const clearButton = document.getElementById('clear-log');
+                        clearButton.click();
+                    }
+                },
+                'esc': {
+                    description: 'Close Modal',
+                    handler: () => {
+                        const modals = document.querySelectorAll('.modal.show');
+                        modals.forEach(modal => {
+                            bootstrap.Modal.getInstance(modal)?.hide();
+                        });
+                    }
+                }
+            },
+
+            init() {
+                document.addEventListener('keydown', (e) => {
+                    const key = this.getKeyCombo(e);
+                    const shortcut = this.shortcuts[key];
+                    
+                    if (shortcut && !this.isInputFocused()) {
+                        e.preventDefault();
+                        shortcut.handler();
+                    }
+                });
+
+                // Add keyboard shortcut hints to buttons
+                this.addShortcutHints();
+                
+                // Add help modal
+                this.createHelpModal();
+            },
+
+            getKeyCombo(e) {
+                const keys = [];
+                if (e.ctrlKey || e.metaKey) keys.push('ctrl');
+                if (e.key === 'Escape') return 'esc';
+                if (e.key !== 'Control' && e.key !== 'Meta') {
+                    keys.push(e.key.toLowerCase());
+                }
+                return keys.join('+');
+            },
+
+            isInputFocused() {
+                const activeElement = document.activeElement;
+                return activeElement.tagName === 'INPUT' || 
+                       activeElement.tagName === 'TEXTAREA' || 
+                       activeElement.isContentEditable;
+            },
+
+            addShortcutHints() {
+                // Add tooltips to buttons with their keyboard shortcuts
+                Object.entries(this.shortcuts).forEach(([key, { description }]) => {
+                    const tooltip = `${description} (${key})`;
+                    
+                    switch (description) {
+                        case 'Start/Stop Workflow':
+                            document.getElementById('start-workflow-btn')?.setAttribute('title', tooltip);
+                            break;
+                        case 'Reset View':
+                            document.getElementById('reset-view')?.setAttribute('title', tooltip);
+                            break;
+                        case 'Clear Log':
+                            document.getElementById('clear-log')?.setAttribute('title', tooltip);
+                            break;
+                    }
+                });
+            },
+
+            createHelpModal() {
+                const modal = document.createElement('div');
+                modal.className = 'modal fade';
+                modal.id = 'keyboard-shortcuts-modal';
+                modal.setAttribute('tabindex', '-1');
+                modal.setAttribute('aria-labelledby', 'keyboard-shortcuts-label');
+                modal.setAttribute('aria-hidden', 'true');
+
+                modal.innerHTML = `
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="keyboard-shortcuts-label">
+                                    <i class="fas fa-keyboard me-2"></i>Keyboard Shortcuts
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Shortcut</th>
+                                                <th>Description</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${Object.entries(this.shortcuts)
+                                                .map(([key, { description }]) => `
+                                                    <tr>
+                                                        <td><kbd>${key}</kbd></td>
+                                                        <td>${description}</td>
+                                                    </tr>
+                                                `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+
+                // Add help button to navbar
+                const navbar = document.querySelector('.navbar .container-fluid');
+                const helpButton = document.createElement('button');
+                helpButton.className = 'btn btn-dark ms-2';
+                helpButton.setAttribute('data-bs-toggle', 'modal');
+                helpButton.setAttribute('data-bs-target', '#keyboard-shortcuts-modal');
+                helpButton.innerHTML = '<i class="fas fa-keyboard"></i>';
+                helpButton.setAttribute('title', 'Keyboard Shortcuts');
+                navbar.appendChild(helpButton);
+            }
+        };
+
+        // Initialize keyboard shortcuts
+        document.addEventListener('DOMContentLoaded', () => {
+            KeyboardShortcuts.init();
+        });
+
+        // Add ARIA labels and roles for better accessibility
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add ARIA labels to visualization
+            const networkGraph = document.getElementById('network-graph');
+            networkGraph.setAttribute('role', 'application');
+            networkGraph.setAttribute('aria-label', 'Agent Interaction Visualization');
+
+            // Add ARIA labels to controls
+            document.getElementById('mode-switch').setAttribute('aria-label', 'Toggle Demo Mode');
+            document.getElementById('task-search').setAttribute('aria-label', 'Search Tasks');
+            document.getElementById('task-status-filter').setAttribute('aria-label', 'Filter by Status');
+            document.getElementById('task-type-filter').setAttribute('aria-label', 'Filter by Type');
+
+            // Add ARIA live regions for dynamic content
+            document.getElementById('messages').setAttribute('aria-live', 'polite');
+            document.getElementById('data-store').setAttribute('aria-live', 'polite');
+
+            // Add ARIA labels to metrics
+            document.querySelectorAll('.performance-metric').forEach(metric => {
+                const label = metric.textContent.trim();
+                metric.setAttribute('aria-label', label);
+            });
+        });
 
     </script>
 </body>
