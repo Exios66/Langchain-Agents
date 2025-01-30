@@ -375,6 +375,110 @@
                 border: 1px solid currentColor;
             }
         }
+
+        /* Additional responsive improvements */
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 0.75rem;
+            }
+
+            .form-control, .btn {
+                font-size: 0.875rem;
+                padding: 0.5rem 0.75rem;
+            }
+
+            .log-entry {
+                font-size: 0.75rem;
+                padding: 0.375rem;
+            }
+
+            .visualization-container {
+                height: 300px;
+            }
+        }
+
+        /* Additional accessibility improvements */
+        .form-control:focus-visible,
+        .btn:focus-visible,
+        .nav-link:focus-visible {
+            outline: 3px solid var(--secondary-color);
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+
+        .modal-dialog:focus {
+            outline: none;
+        }
+
+        [role="alert"] {
+            border-left-width: 4px;
+            border-left-style: solid;
+        }
+
+        [role="alert"].error {
+            border-left-color: var(--error-color);
+        }
+
+        [role="alert"].success {
+            border-left-color: var(--success-color);
+        }
+
+        [role="alert"].warning {
+            border-left-color: #ffc107;
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            .progress-bar {
+                transition: none !important;
+            }
+
+            .modal.fade {
+                transition: none !important;
+            }
+
+            .network-graph {
+                transition: none !important;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .navbar,
+            .btn,
+            .modal-footer,
+            .performance-metrics-dropdown {
+                display: none !important;
+            }
+
+            .card {
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+            }
+
+            .visualization-container {
+                page-break-inside: avoid;
+            }
+
+            .log-entry {
+                page-break-inside: avoid;
+            }
+
+            body {
+                font-size: 12pt;
+            }
+
+            a[href]:after {
+                content: " (" attr(href) ")";
+            }
+        }
     </style>
 </head>
 <body>
@@ -482,137 +586,139 @@
     </nav>
 
     <!-- Main Content -->
-    <div class="main-container">
-        <div class="row">
-            <!-- Workflow Control Panel -->
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-cogs me-2"></i>Workflow Control
+    <main id="main-content" tabindex="-1">
+        <div class="main-container">
+            <div class="row" role="region" aria-label="Workflow Controls">
+                <!-- Workflow Control Panel -->
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-cogs me-2"></i>Workflow Control
+                        </div>
+                        <div class="card-body">
+                            <form id="workflow-form">
+                                <div class="mb-3">
+                                    <label for="input-data" class="form-label">Input Data</label>
+                                    <textarea class="form-control" id="input-data" rows="4" placeholder="Enter JSON input data" required></textarea>
+                                    <div class="form-text">Example: {"query": "analyze market trends", "parameters": {"timeframe": "1w"}}</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="agent-selection" class="form-label">Select Agents</label>
+                                    <select class="form-select" id="agent-selection" multiple required>
+                                        <option value="professor_athena">Professor Athena (Research)</option>
+                                        <option value="dr_milgrim">Dr. Milgrim (Analysis)</option>
+                                        <option value="yaat">YAAT (Task Execution)</option>
+                                    </select>
+                                    <div class="form-text">Hold Ctrl/Cmd to select multiple agents</div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="workflow-type" class="form-label">Workflow Type</label>
+                                    <select class="form-select" id="workflow-type" required>
+                                        <option value="sequential">Sequential</option>
+                                        <option value="parallel">Parallel</option>
+                                        <option value="hybrid">Hybrid</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" id="start-workflow-btn">
+                                    <i class="fas fa-play me-2"></i>Start Workflow
+                                </button>
+                            </form>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <form id="workflow-form">
-                            <div class="mb-3">
-                                <label for="input-data" class="form-label">Input Data</label>
-                                <textarea class="form-control" id="input-data" rows="4" placeholder="Enter JSON input data" required></textarea>
-                                <div class="form-text">Example: {"query": "analyze market trends", "parameters": {"timeframe": "1w"}}</div>
+
+                    <!-- Workflow Status -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-info-circle me-2"></i>Current Status
+                        </div>
+                        <div class="card-body">
+                            <p><strong>State ID:</strong> <span id="state-id">-</span></p>
+                            <p><strong>Status:</strong> <span id="workflow-status" class="workflow-status">Not Started</span></p>
+                            <p><strong>Active Agents:</strong> <span id="active-agents">0</span></p>
+                            <p><strong>Messages Processed:</strong> <span id="messages-count">0</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visualization Panel -->
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-project-diagram me-2"></i>Workflow Visualization
+                        </div>
+                        <div class="card-body">
+                            <div class="visualization-container">
+                                <div id="network-graph"></div>
                             </div>
-                            <div class="mb-3">
-                                <label for="agent-selection" class="form-label">Select Agents</label>
-                                <select class="form-select" id="agent-selection" multiple required>
-                                    <option value="professor_athena">Professor Athena (Research)</option>
-                                    <option value="dr_milgrim">Dr. Milgrim (Analysis)</option>
-                                    <option value="yaat">YAAT (Task Execution)</option>
-                                </select>
-                                <div class="form-text">Hold Ctrl/Cmd to select multiple agents</div>
+                        </div>
+                    </div>
+
+                    <!-- Message Log -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <i class="fas fa-comments me-2"></i>Message Log
                             </div>
-                            <div class="mb-3">
-                                <label for="workflow-type" class="form-label">Workflow Type</label>
-                                <select class="form-select" id="workflow-type" required>
-                                    <option value="sequential">Sequential</option>
-                                    <option value="parallel">Parallel</option>
-                                    <option value="hybrid">Hybrid</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100" id="start-workflow-btn">
-                                <i class="fas fa-play me-2"></i>Start Workflow
+                            <button class="btn btn-sm btn-outline-light" id="clear-log" title="Clear message log">
+                                <i class="fas fa-trash-alt"></i>
                             </button>
-                        </form>
-                    </div>
-                </div>
-
-                <!-- Workflow Status -->
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-info-circle me-2"></i>Current Status
-                    </div>
-                    <div class="card-body">
-                        <p><strong>State ID:</strong> <span id="state-id">-</span></p>
-                        <p><strong>Status:</strong> <span id="workflow-status" class="workflow-status">Not Started</span></p>
-                        <p><strong>Active Agents:</strong> <span id="active-agents">0</span></p>
-                        <p><strong>Messages Processed:</strong> <span id="messages-count">0</span></p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Visualization Panel -->
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-project-diagram me-2"></i>Workflow Visualization
-                    </div>
-                    <div class="card-body">
-                        <div class="visualization-container">
-                            <div id="network-graph"></div>
+                        </div>
+                        <div class="card-body">
+                            <div id="messages"></div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Message Log -->
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <i class="fas fa-comments me-2"></i>Message Log
+            <!-- Data Store Panel -->
+            <div class="row" role="region" aria-label="Data Store">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-database me-2"></i>Data Store
                         </div>
-                        <button class="btn btn-sm btn-outline-light" id="clear-log" title="Clear message log">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                    <div class="card-body">
-                        <div id="messages"></div>
+                        <div class="card-body">
+                            <pre id="data-store" class="bg-light p-3 rounded"></pre>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Data Store Panel -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="fas fa-database me-2"></i>Data Store
+            <!-- Static Demo Controls -->
+            <div id="static-demo-controls" class="card">
+                <div class="card-header">
+                    <i class="fas fa-theater-masks me-2"></i>Demo Controls
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="demo-speed" class="form-label">Simulation Speed</label>
+                        <input type="range" class="demo-speed-control" id="demo-speed" min="0.5" max="2" step="0.1" value="1">
+                        <span id="speed-value">1x</span>
                     </div>
-                    <div class="card-body">
-                        <pre id="data-store" class="bg-light p-3 rounded"></pre>
-                    </div>
+                    <button class="btn btn-secondary" onclick="resetDemo()">
+                        <i class="fas fa-redo me-2"></i>Reset Demo
+                    </button>
                 </div>
             </div>
         </div>
-
-        <!-- Static Demo Controls -->
-        <div id="static-demo-controls" class="card">
-            <div class="card-header">
-                <i class="fas fa-theater-masks me-2"></i>Demo Controls
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="demo-speed" class="form-label">Simulation Speed</label>
-                    <input type="range" class="demo-speed-control" id="demo-speed" min="0.5" max="2" step="0.1" value="1">
-                    <span id="speed-value">1x</span>
-                </div>
-                <button class="btn btn-secondary" onclick="resetDemo()">
-                    <i class="fas fa-redo me-2"></i>Reset Demo
-                </button>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <!-- Loading Spinner -->
-    <div class="loading-spinner" id="loading-spinner">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+    <div class="loading-spinner" id="loading-spinner" role="status" aria-live="polite">
+        <div class="spinner-border text-primary" aria-hidden="true"></div>
         <p class="mt-2">Processing workflow...</p>
     </div>
 
     <!-- Error Toast -->
-    <div class="toast" id="error-toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header bg-danger text-white">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            <strong class="me-auto">Error</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        <div class="toast" id="error-toast" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-danger text-white">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body" id="error-message"></div>
         </div>
-        <div class="toast-body" id="error-message"></div>
     </div>
 
     <!-- Scripts -->
@@ -1642,6 +1748,152 @@
                 const label = metric.textContent.trim();
                 metric.setAttribute('aria-label', label);
             });
+        });
+
+        // Focus management system
+        const FocusManager = {
+            focusableSelectors: [
+                'a[href]',
+                'button:not([disabled])',
+                'input:not([disabled])',
+                'select:not([disabled])',
+                'textarea:not([disabled])',
+                '[tabindex="0"]'
+            ].join(','),
+
+            init() {
+                this.setupModalFocus();
+                this.setupTabTrapping();
+                this.setupFocusRestoration();
+                this.setupSkipLink();
+            },
+
+            setupModalFocus() {
+                // Handle focus when modals open
+                document.querySelectorAll('.modal').forEach(modal => {
+                    modal.addEventListener('shown.bs.modal', () => {
+                        const firstFocusable = modal.querySelector(this.focusableSelectors);
+                        firstFocusable?.focus();
+                    });
+
+                    // Store last focused element before modal
+                    modal.addEventListener('show.bs.modal', () => {
+                        modal.dataset.lastFocus = document.activeElement.id;
+                    });
+
+                    // Restore focus when modal closes
+                    modal.addEventListener('hidden.bs.modal', () => {
+                        const lastFocused = document.getElementById(modal.dataset.lastFocus);
+                        lastFocused?.focus();
+                    });
+                });
+            },
+
+            setupTabTrapping() {
+                // Trap focus within modals
+                document.addEventListener('keydown', (e) => {
+                    if (e.key !== 'Tab') return;
+
+                    const modal = document.querySelector('.modal.show');
+                    if (!modal) return;
+
+                    const focusableElements = modal.querySelectorAll(this.focusableSelectors);
+                    const firstFocusable = focusableElements[0];
+                    const lastFocusable = focusableElements[focusableElements.length - 1];
+
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstFocusable) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        if (document.activeElement === lastFocusable) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                });
+            },
+
+            setupFocusRestoration() {
+                // Restore focus after dynamic content updates
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach(mutation => {
+                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                            const addedNode = mutation.addedNodes[0];
+                            if (addedNode.nodeType === Node.ELEMENT_NODE) {
+                                const focusable = addedNode.querySelector(this.focusableSelectors);
+                                if (focusable && !document.querySelector('.modal.show')) {
+                                    focusable.focus();
+                                }
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(document.getElementById('messages'), {
+                    childList: true,
+                    subtree: true
+                });
+            },
+
+            setupSkipLink() {
+                // Handle skip link
+                const skipLink = document.querySelector('.skip-link');
+                const mainContent = document.getElementById('main-content');
+
+                skipLink?.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    mainContent?.focus();
+                    mainContent?.scrollIntoView();
+                });
+            },
+
+            announceMessage(message, priority = 'polite') {
+                // Announce messages to screen readers
+                const announcer = document.getElementById('sr-announcer');
+                if (!announcer) return;
+
+                announcer.setAttribute('aria-live', priority);
+                announcer.textContent = message;
+
+                // Clear after a delay
+                setTimeout(() => {
+                    announcer.textContent = '';
+                }, 3000);
+            }
+        };
+
+        // Initialize focus management
+        document.addEventListener('DOMContentLoaded', () => {
+            // Add screen reader announcer
+            const announcer = document.createElement('div');
+            announcer.id = 'sr-announcer';
+            announcer.className = 'visually-hidden';
+            announcer.setAttribute('aria-live', 'polite');
+            document.body.appendChild(announcer);
+
+            // Initialize focus management
+            FocusManager.init();
+
+            // Enhance existing functions with announcements
+            const originalShowError = showError;
+            showError = function(message) {
+                originalShowError(message);
+                FocusManager.announceMessage(message, 'assertive');
+            };
+
+            const originalShowSuccess = showSuccess;
+            showSuccess = function(message) {
+                originalShowSuccess(message);
+                FocusManager.announceMessage(message);
+            };
+
+            const originalAddMessage = addMessage;
+            addMessage = function(message, type) {
+                originalAddMessage(message, type);
+                FocusManager.announceMessage(message);
+            };
         });
 
     </script>
