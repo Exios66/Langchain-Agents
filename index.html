@@ -1104,6 +1104,155 @@
 
         // Start the application when the DOM is ready
         document.addEventListener('DOMContentLoaded', initializeApplication);
+
+        // Global error boundary
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Global error:', { msg, url, lineNo, columnNo, error });
+            showError(`An error occurred: ${msg}`);
+            return false;
+        };
+
+        // Performance monitoring
+        const PerformanceMonitor = {
+            metrics: {
+                errors: 0,
+                warnings: 0,
+                apiCalls: 0,
+                avgResponseTime: 0,
+                totalResponseTime: 0
+            },
+
+            startTime: Date.now(),
+
+            logError(error) {
+                this.metrics.errors++;
+                this.updateDashboard();
+                console.error('Monitored error:', error);
+            },
+
+            logWarning(warning) {
+                this.metrics.warnings++;
+                this.updateDashboard();
+                console.warn('Monitored warning:', warning);
+            },
+
+            logApiCall(duration) {
+                this.metrics.apiCalls++;
+                this.metrics.totalResponseTime += duration;
+                this.metrics.avgResponseTime = this.metrics.totalResponseTime / this.metrics.apiCalls;
+                this.updateDashboard();
+            },
+
+            getUptime() {
+                return Math.floor((Date.now() - this.startTime) / 1000);
+            },
+
+            updateDashboard() {
+                if (!CONFIG.PERFORMANCE_METRICS.enabled) return;
+
+                const metrics = {
+                    uptime: this.getUptime(),
+                    errors: this.metrics.errors,
+                    warnings: this.metrics.warnings,
+                    apiCalls: this.metrics.apiCalls,
+                    avgResponseTime: Math.round(this.metrics.avgResponseTime)
+                };
+
+                // Update performance metrics in UI
+                document.getElementById('uptime').textContent = `${metrics.uptime}s`;
+                document.getElementById('error-count').textContent = metrics.errors;
+                document.getElementById('warning-count').textContent = metrics.warnings;
+                document.getElementById('api-calls').textContent = metrics.apiCalls;
+                document.getElementById('avg-response-time').textContent = `${metrics.avgResponseTime}ms`;
+
+                // Update status indicators
+                const healthStatus = document.getElementById('health-status');
+                if (metrics.errors > 10) {
+                    healthStatus.className = 'badge bg-danger';
+                    healthStatus.textContent = 'Critical';
+                } else if (metrics.errors > 5) {
+                    healthStatus.className = 'badge bg-warning';
+                    healthStatus.textContent = 'Warning';
+                } else {
+                    healthStatus.className = 'badge bg-success';
+                    healthStatus.textContent = 'Healthy';
+                }
+
+                // Log to console if significant changes
+                if (metrics.errors > 0 && metrics.errors % 5 === 0) {
+                    console.warn('Error threshold reached:', metrics);
+                }
+            },
+
+            reset() {
+                this.metrics = {
+                    errors: 0,
+                    warnings: 0,
+                    apiCalls: 0,
+                    avgResponseTime: 0,
+                    totalResponseTime: 0
+                };
+                this.startTime = Date.now();
+                this.updateDashboard();
+            }
+        };
+
+        // Enhanced fetch with performance monitoring
+        async function monitoredFetch(url, options = {}) {
+            const startTime = Date.now();
+            try {
+                const response = await fetch(url, options);
+                const duration = Date.now() - startTime;
+                PerformanceMonitor.logApiCall(duration);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response;
+            } catch (error) {
+                PerformanceMonitor.logError(error);
+                throw error;
+            }
+        }
+
+        // Replace fetch calls with monitored version
+        const originalFetchWithRetry = fetchWithRetry;
+        fetchWithRetry = async function(url, options = {}) {
+            try {
+                return await originalFetchWithRetry(url, {
+                    ...options,
+                    fetch: monitoredFetch
+                });
+            } catch (error) {
+                PerformanceMonitor.logError(error);
+                throw error;
+            }
+        };
+
+        // Enhanced error handling
+        const originalShowError = showError;
+        showError = function(message) {
+            PerformanceMonitor.logError(new Error(message));
+            originalShowError(message);
+        };
+
+        // Start performance monitoring
+        document.addEventListener('DOMContentLoaded', () => {
+            if (CONFIG.PERFORMANCE_METRICS.enabled) {
+                console.log('Performance monitoring started');
+                setInterval(() => {
+                    PerformanceMonitor.updateDashboard();
+                }, CONFIG.PERFORMANCE_METRICS.sampleRate);
+            }
+        });
+
+        // Export monitoring interface for debugging
+        window.DEBUG = {
+            monitor: PerformanceMonitor,
+            state: state,
+            config: CONFIG
+        };
+
     </script>
 </body>
 </html>
