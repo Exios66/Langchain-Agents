@@ -1,6 +1,10 @@
 # run.py
 from core.workflow import WorkflowManager
+# run.py
+import uvicorn
 
+if __name__ == "__main__":
+    uvicorn.run("api.endpoints:app", host="0.0.0.0", port=8000, reload=True)
 def main():
     """Main execution function."""
     # Initialize workflow
