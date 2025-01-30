@@ -83,11 +83,82 @@ class Settings(BaseSettings):
         default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         description="Log format"
     )
+    LOG_FILE: str = Field(
+        default="agent_execution.log",
+        description="Log file path"
+    )
+    
+    # External API Settings
+    OPENAI_API_KEY: str = Field(
+        default=os.getenv("OPENAI_API_KEY", ""),
+        description="OpenAI API key"
+    )
+    SERPAPI_API_KEY: str = Field(
+        default=os.getenv("SERPAPI_API_KEY", ""),
+        description="SerpAPI key"
+    )
+    
+    # Model Settings
+    MODEL_NAME: str = Field(
+        default=os.getenv("MODEL_NAME", "gpt-4"),
+        description="Default language model to use"
+    )
+    TEMPERATURE: float = Field(
+        default=float(os.getenv("TEMPERATURE", "0.7")),
+        description="Model temperature parameter"
+    )
+    MAX_ITERATIONS: int = Field(
+        default=int(os.getenv("MAX_ITERATIONS", "10")),
+        description="Maximum number of iterations"
+    )
+    
+    # Storage Settings
+    CHROMA_PERSIST_DIRECTORY: str = Field(
+        default=os.getenv("CHROMA_PERSIST_DIRECTORY", "./chroma_db"),
+        description="ChromaDB persistence directory"
+    )
+    EMBEDDING_MODEL: str = Field(
+        default=os.getenv("EMBEDDING_MODEL", "text-embedding-ada-002"),
+        description="Embedding model name"
+    )
+    
+    # Integration Settings
+    NOTION_API_KEY: str = Field(
+        default=os.getenv("NOTION_API_KEY", ""),
+        description="Notion API key"
+    )
+    NOTION_DATABASE_ID: str = Field(
+        default=os.getenv("NOTION_DATABASE_ID", ""),
+        description="Notion database ID"
+    )
+    GITHUB_TOKEN: str = Field(
+        default=os.getenv("GITHUB_TOKEN", ""),
+        description="GitHub access token"
+    )
+    GITHUB_REPO: str = Field(
+        default=os.getenv("GITHUB_REPO", ""),
+        description="GitHub repository (format: username/repo)"
+    )
+    ZAPIER_WEBHOOK_URL: str = Field(
+        default=os.getenv("ZAPIER_WEBHOOK_URL", ""),
+        description="Zapier webhook URL"
+    )
+    SLACK_WEBHOOK_URL: str = Field(
+        default=os.getenv("SLACK_WEBHOOK_URL", ""),
+        description="Slack webhook URL"
+    )
+    
+    # Python Path
+    PYTHONPATH: str = Field(
+        default=os.getenv("PYTHONPATH", ""),
+        description="Python path"
+    )
     
     class Config:
         """Pydantic config."""
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Allow extra fields in environment without raising validation errors
 
 # Create settings instance
 settings = Settings()
