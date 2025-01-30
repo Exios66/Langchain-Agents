@@ -15,26 +15,31 @@ A powerful framework for managing and executing workflows across multiple AI age
 ## Setup
 
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/yourusername/multi-agent-workflow.git
 cd multi-agent-workflow
 ```
 
 2. Create and activate a virtual environment:
+
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
+
 ```bash
 pip install -r requirements.txt
 ```
 
 4. Set up environment variables:
+
 ```bash
 cp .env.template .env
 ```
+
 Edit the `.env` file with your configuration settings.
 
 ## Configuration
@@ -90,16 +95,19 @@ Access the web interface at `http://localhost:8003`:
 ## Development
 
 1. Install development dependencies:
+
 ```bash
 pip install -r requirements-dev.txt
 ```
 
 2. Run tests:
+
 ```bash
 pytest tests/
 ```
 
 3. Start the development server:
+
 ```bash
 python run.py
 ```

@@ -1,20 +1,30 @@
 # api/endpoints.py
-from fastapi import FastAPI, HTTPException, Depends, Header, Request
+from fastapi import FastAPI, HTTPException, Depends, Header, Request, status
 from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, validator, constr
 from typing import List, Dict, Any, Optional
-from core.state import State, save_state, load_state, create_initial_state
-from core.graph_builder import compiled_graph
-import time
 from datetime import datetime
+import time
 import jwt
 import os
 
-app = FastAPI(title="Workflow API",
-             description="API for managing multi-agent workflows",
-             version="1.0.0")
+from core.state import State, create_initial_state
+from core.graph_builder import compiled_graph
+from core.database import (
+    save_workflow_state,
+    get_workflow_state,
+    update_workflow_status,
+    get_db
+)
+
+# Initialize FastAPI app
+app = FastAPI(
+    title="Multi-Agent Workflow API",
+    description="API for managing and executing multi-agent workflows",
+    version="1.0.0"
+)
 
 # Authentication setup
 API_KEY_NAME = "X-API-Key"
@@ -25,10 +35,26 @@ RATE_LIMIT_WINDOW = 60  # seconds
 MAX_REQUESTS = 100  # requests per window
 request_history: Dict[str, List[float]] = {}
 
+# CORS configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Input validation models
 class WorkflowInput(BaseModel):
     input_data: Dict[str, Any]
-    agents: List[str]
-    workflow_type: str
+    agents: List[constr(regex='^(professor_athena|dr_milgrim|yaat)$')]
+    workflow_type: constr(regex='^(sequential|parallel|hybrid)$')
+
+    @validator('agents')
+    def validate_agents(cls, v):
+        if not v:
+            raise ValueError("At least one agent must be specified")
+        return v
 
 class WorkflowResponse(BaseModel):
     state_id: int
@@ -40,34 +66,19 @@ class StateResponse(BaseModel):
     data_store: Dict[str, Any]
     status: str
 
-class EnhancedWorkflowInput(BaseModel):
-    input_data: Dict[str, Any]
-    agents: List[str]
-    workflow_type: str
-    
-    @validator('workflow_type')
-    def validate_workflow_type(cls, v):
-        allowed_types = ['sequential', 'parallel', 'hybrid']
-        if v not in allowed_types:
-            raise ValueError(f'workflow_type must be one of {allowed_types}')
-        return v
-    
-    @validator('agents')
-    def validate_agents(cls, v):
-        allowed_agents = ['professor_athena', 'dr_milgrim', 'yaat']
-        if not all(agent in allowed_agents for agent in v):
-            raise ValueError(f'agents must be from the list: {allowed_agents}')
-        return v
-
+# Authentication middleware
 async def verify_api_key(api_key: str = Depends(api_key_header)):
+    """Verify API key."""
     if not api_key or api_key != os.getenv("API_KEY", "default_key"):
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API key"
         )
     return api_key
 
-async def rate_limit(request: Request):
+# Rate limiting middleware
+async def check_rate_limit(request: Request):
+    """Check rate limiting."""
     client_ip = request.client.host
     now = time.time()
     
@@ -82,27 +93,29 @@ async def rate_limit(request: Request):
     
     if len(request_history[client_ip]) >= MAX_REQUESTS:
         raise HTTPException(
-            status_code=429,
-            detail="Too many requests"
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded"
         )
     
     request_history[client_ip].append(now)
     return True
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Error handler
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler."""
+    if isinstance(exc, HTTPException):
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "detail": exc.detail,
+                "timestamp": datetime.utcnow().isoformat(),
+                "path": str(request.url)
+            }
+        )
+    
     return JSONResponse(
-        status_code=500,
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": str(exc),
             "timestamp": datetime.utcnow().isoformat(),
@@ -112,9 +125,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.post("/workflow/start/", response_model=WorkflowResponse)
 async def start_workflow(
-    workflow_input: EnhancedWorkflowInput,
+    workflow_input: WorkflowInput,
     api_key: str = Depends(verify_api_key),
-    _: bool = Depends(rate_limit)
+    _: bool = Depends(check_rate_limit)
 ):
     """Start a new workflow and return the state ID."""
     try:
@@ -129,26 +142,28 @@ async def start_workflow(
         try:
             final_state = compiled_graph.invoke(initial_state)
         except Exception as e:
-            print(f"Error executing workflow: {e}")
             final_state = initial_state
             final_state["messages"].append(f"Workflow execution failed: {str(e)}")
             final_state["data_store"]["status"] = "failed"
+            final_state["data_store"]["error"] = str(e)
         
         # Save state
-        state_id = save_state(
+        state_id = save_workflow_state(
             input_data=workflow_input.input_data,
-            state=final_state,
-            workflow_type=workflow_input.workflow_type
+            state_data=final_state["data_store"],
+            messages=final_state["messages"],
+            workflow_type=workflow_input.workflow_type,
+            status=final_state["data_store"].get("status", "completed")
         )
         
         return WorkflowResponse(
             state_id=state_id,
             message="Workflow started successfully",
-            status="success"
+            status=final_state["data_store"].get("status", "completed")
         )
     except Exception as e:
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing workflow: {str(e)}"
         )
 
@@ -156,27 +171,27 @@ async def start_workflow(
 async def get_workflow_state(
     state_id: int,
     api_key: str = Depends(verify_api_key),
-    _: bool = Depends(rate_limit)
+    _: bool = Depends(check_rate_limit)
 ):
     """Retrieve the state of a workflow."""
     try:
-        state = load_state(state_id)
+        state = get_workflow_state(state_id)
         if not state:
             raise HTTPException(
-                status_code=404,
+                status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Workflow state {state_id} not found"
             )
         
         return StateResponse(
             messages=state["messages"],
-            data_store=state["data_store"],
+            data_store=state["state_data"],
             status=state.get("status", "unknown")
         )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=500,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error retrieving workflow state: {str(e)}"
         )
 
@@ -184,8 +199,24 @@ async def get_workflow_state(
 @app.get("/health")
 async def health_check():
     """Check if the API is running."""
-    return {
-        "status": "healthy",
-        "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0"
-    }
+    try:
+        # Test database connection
+        with get_db() as db:
+            db.execute("SELECT 1")
+        
+        return {
+            "status": "healthy",
+            "timestamp": datetime.utcnow().isoformat(),
+            "version": "1.0.0",
+            "database": "connected"
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "unhealthy",
+                "timestamp": datetime.utcnow().isoformat(),
+                "version": "1.0.0",
+                "error": str(e)
+            }
+        )
