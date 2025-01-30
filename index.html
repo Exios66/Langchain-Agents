@@ -479,6 +479,40 @@
                 content: " (" attr(href) ")";
             }
         }
+
+        .api-key-form {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .auth-status {
+            display: inline-block;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-left: 1rem;
+        }
+
+        .auth-status.authenticated {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .auth-status.unauthenticated {
+            background-color: var(--error-color);
+            color: white;
+        }
+
+        .rate-limit-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 0.5rem;
+            border-radius: 5px;
+            margin-top: 1rem;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -1919,6 +1953,118 @@
                 ProductionMode.startPerformanceMonitoring();
             }
         });
+
+        // Add this at the beginning of your script section
+        let apiKey = localStorage.getItem('apiKey');
+        const authStatus = document.querySelector('.auth-status');
+        const rateLimitWarning = document.querySelector('.rate-limit-warning');
+        let requestCount = 0;
+        const MAX_REQUESTS = 90; // Leave some buffer from server's 100
+        
+        // Update authentication status
+        function updateAuthStatus(isAuthenticated) {
+            authStatus.classList.remove('authenticated', 'unauthenticated');
+            authStatus.classList.add(isAuthenticated ? 'authenticated' : 'unauthenticated');
+            authStatus.textContent = isAuthenticated ? 'Authenticated' : 'Not Authenticated';
+        }
+
+        // Save API key
+        document.getElementById('save-api-key').addEventListener('click', () => {
+            const newApiKey = document.getElementById('api-key').value;
+            if (newApiKey) {
+                localStorage.setItem('apiKey', newApiKey);
+                apiKey = newApiKey;
+                updateAuthStatus(true);
+                document.getElementById('api-key').value = '';
+            }
+        });
+
+        // Update your existing fetch calls to include authentication
+        async function makeAuthenticatedRequest(url, options = {}) {
+            if (!apiKey) {
+                throw new Error('API key not set');
+            }
+
+            requestCount++;
+            if (requestCount > MAX_REQUESTS) {
+                rateLimitWarning.style.display = 'block';
+                throw new Error('Rate limit exceeded');
+            }
+
+            const headers = {
+                'Content-Type': 'application/json',
+                'X-API-Key': apiKey,
+                ...options.headers
+            };
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    headers
+                });
+
+                if (response.status === 403) {
+                    updateAuthStatus(false);
+                    throw new Error('Invalid API key');
+                }
+
+                if (response.status === 429) {
+                    rateLimitWarning.style.display = 'block';
+                    throw new Error('Rate limit exceeded');
+                }
+
+                return response;
+            } catch (error) {
+                showError(error.message);
+                throw error;
+            }
+        }
+
+        // Update your existing startWorkflow function
+        async function startWorkflow(workflowData) {
+            try {
+                const response = await makeAuthenticatedRequest('/workflow/start/', {
+                    method: 'POST',
+                    body: JSON.stringify(workflowData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                showError(`Failed to start workflow: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Update your existing getWorkflowState function
+        async function getWorkflowState(stateId) {
+            try {
+                const response = await makeAuthenticatedRequest(`/workflow/${stateId}/`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                showError(`Failed to get workflow state: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Initialize authentication status
+        updateAuthStatus(!!apiKey);
+
+        // Reset request count periodically
+        setInterval(() => {
+            requestCount = 0;
+            rateLimitWarning.style.display = 'none';
+        }, 60000); // Reset every minute
     </script>
 </body>
 </html>

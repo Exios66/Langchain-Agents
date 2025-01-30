@@ -1,199 +1,127 @@
-# Langchain-Agents Framework
+# Multi-Agent Workflow Framework
 
-A sophisticated multi-agent framework built with LangChain for orchestrating complex AI agent workflows.
+A powerful framework for managing and executing workflows across multiple AI agents.
 
-## 🌟 Features
+## Features
 
-- Multi-agent orchestration with LangChain
-- Configurable workflow management
-- Built-in error handling and recovery
-- Human-in-the-loop review capabilities
-- Real-time streaming output
-- Modular and extensible architecture
+- Multiple agent support (Professor Athena, Dr. Milgrim, YAAT)
+- Sequential, parallel, and hybrid workflow execution
+- Real-time status updates and monitoring
+- Secure API authentication
+- Rate limiting and request validation
+- Beautiful web interface
+- Configurable logging and monitoring
 
-## 📋 Prerequisites
+## Setup
 
-- Python 3.9 or higher
-- OpenAI API key
-- SerpAPI key (optional, for web search capabilities)
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/multi-agent-workflow.git
+cd multi-agent-workflow
+```
 
-## 🚀 Quick Start
+2. Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-1. **Clone the repository**
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-   ```bash
-   git clone https://github.com/yourusername/Langchain-Agents.git
-   cd Langchain-Agents
-   ```
+4. Set up environment variables:
+```bash
+cp .env.template .env
+```
+Edit the `.env` file with your configuration settings.
 
-2. **Run the installation script**
+## Configuration
 
-   ```bash
-   chmod +x install.sh
-   ./install.sh
-   ```
+The framework uses a hierarchical configuration system:
 
-3. **Configure environment variables**
-   - Copy `.env.template` to `.env`
-   - Update the `.env` file with your API keys and preferences:
+1. Environment Variables (highest priority)
+2. `.env` file
+3. Default values in `config.py`
 
-     ```env
-     OPENAI_API_KEY=your-openai-api-key
-     SERPAPI_API_KEY=your-serpapi-api-key
-     ```
+### Required Configuration
 
-4. **Activate the virtual environment**
+- `API_KEY`: Your secure API key for authentication
+- `DATABASE_URL`: Database connection string
+- `LOG_LEVEL`: Logging level (INFO, DEBUG, etc.)
 
-   ```bash
-   source venv/bin/activate
-   ```
+### Optional Configuration
 
-5. **Run the framework**
+- `CORS_ORIGINS`: Allowed CORS origins (default: *)
+- `ALLOWED_HOSTS`: Allowed hosts (default: *)
+- `MAX_CONCURRENT_WORKFLOWS`: Maximum concurrent workflows
+- `MAX_WORKFLOW_TIME`: Maximum workflow execution time
 
-   ```bash
-   python run.py
-   ```
+## Authentication
 
-## 🏗️ Project Structure
+The API uses API key authentication. Include your API key in requests:
 
 ```bash
-Langchain-Agents/
-├── agents/                 # Agent implementations
-│   ├── agent_a.py         # Primary agent
-│   ├── agent_b.py         # Secondary agent
-│   └── subgraph.py        # Subgraph processing
-├── core/                  # Core framework components
-│   ├── config.py          # Configuration management
-│   ├── graph_builder.py   # Workflow graph construction
-│   └── state.py          # State management
-├── integrations/         # External integrations
-│   ├── error_handling.py  # Error management
-│   ├── human_review.py    # Human review interface
-│   └── streaming.py       # Output streaming
-├── .env                  # Environment configuration
-├── install.sh           # Installation script
-├── requirements.txt     # Python dependencies
-├── run.py              # Main execution script
-└── setup.py            # Package setup
+curl -H "X-API-Key: your_api_key" http://localhost:8003/workflow/start/
 ```
 
-## 📖 Component Details
+Or use the web interface and enter your API key in the authentication form.
 
-### Agents
+## Rate Limiting
 
-- **agent_a.py**: Primary agent for initial processing
-- **agent_b.py**: Secondary agent for advanced processing
-- **subgraph.py**: Handles preprocessing and data normalization
+- 100 requests per minute per client
+- Rate limit status available in response headers
+- Web interface shows rate limit warnings
 
-### Core Components
+## API Endpoints
 
-- **config.py**: Manages environment variables and configuration
-- **graph_builder.py**: Constructs and manages the workflow graph
-- **state.py**: Handles state management across the workflow
+See [API_ENDPOINTS.md](docs/API_ENDPOINTS.md) for detailed API documentation.
 
-### Integrations
+## Web Interface
 
-- **error_handling.py**: Manages error detection and recovery
-- **human_review.py**: Facilitates human review of agent decisions
-- **streaming.py**: Handles real-time output streaming
+Access the web interface at `http://localhost:8003`:
 
-## ⚙️ Configuration
+1. Enter your API key in the authentication form
+2. Create and monitor workflows
+3. View real-time status updates
+4. Access workflow history and results
 
-The framework can be configured through the `.env` file:
+## Development
 
-```env
-# Agent Configuration
-MAX_ITERATIONS=10        # Maximum workflow iterations
-TEMPERATURE=0.7         # Model temperature
-MODEL_NAME=gpt-4        # OpenAI model selection
-
-# Vector Store Configuration
-CHROMA_PERSIST_DIRECTORY=./chroma_db
-EMBEDDING_MODEL=text-embedding-ada-002
-
-# Logging Configuration
-LOG_LEVEL=INFO
-LOG_FILE=agent_execution.log
+1. Install development dependencies:
+```bash
+pip install -r requirements-dev.txt
 ```
 
-## 🔄 Workflow
+2. Run tests:
+```bash
+pytest tests/
+```
 
-1. **Initialization**
-   - Configuration loading
-   - Environment setup
-   - Graph construction
+3. Start the development server:
+```bash
+python run.py
+```
 
-2. **Execution Flow**
-   - Subgraph preprocessing
-   - Agent A processing
-   - Agent B processing
-   - Human review (if required)
-   - Result streaming
+## Security Best Practices
 
-3. **Error Handling**
-   - Automatic error detection
-   - Recovery procedures
-   - Logging and monitoring
+1. Never commit `.env` files
+2. Use strong, unique API keys
+3. Regularly rotate API keys
+4. Monitor API usage and rate limits
+5. Keep dependencies updated
 
-## 🛠️ Development
-
-To extend the framework:
-
-1. **Adding New Agents**
-   - Create new agent file in `agents/`
-   - Implement agent logic
-   - Register in `graph_builder.py`
-
-2. **Custom Integrations**
-   - Add integration file in `integrations/`
-   - Implement integration logic
-   - Update workflow in `graph_builder.py`
-
-## 📝 Logging
-
-Logs are stored in `logs/agent_execution.log` with configurable levels:
-
-- INFO: Standard operation logs
-- DEBUG: Detailed debugging information
-- ERROR: Error messages and stack traces
-
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+3. Make your changes
+4. Submit a pull request
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Troubleshooting
-
-Common issues and solutions:
-
-1. **Import Errors**
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Environment Issues**
-
-   ```bash
-   source venv/bin/activate
-   ```
-
-3. **API Key Errors**
-   - Verify `.env` file configuration
-   - Check API key validity
-
-## 📚 Additional Resources
-
-- [LangChain Documentation](https://python.langchain.com/docs/get_started/introduction)
-- [OpenAI API Documentation](https://platform.openai.com/docs/introduction)
-- [SerpAPI Documentation](https://serpapi.com/docs)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ```bash
 multi_agent_framework/
