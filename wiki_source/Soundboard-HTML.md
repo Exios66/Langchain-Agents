@@ -28,6 +28,7 @@ The HTML Soundboard is a web-based application designed to provide an intuitive 
 ## ✨ Features
 
 ### Core Functionality
+
 - 🔊 Instant sound playback
 - 🎚️ Volume control for each sound
 - 🎨 Customizable interface
@@ -35,6 +36,7 @@ The HTML Soundboard is a web-based application designed to provide an intuitive 
 - 📱 Responsive design for all devices
 
 ### Technical Features
+
 - 💻 Pure HTML5/CSS3/JavaScript implementation
 - 🔄 Asynchronous audio loading
 - 🎵 Multiple audio format support
@@ -74,6 +76,7 @@ python -m http.server 8000
 ```
 
 ### Production Deployment
+
 1. Fork the repository
 2. Enable GitHub Pages in repository settings
 3. Deploy to your preferred hosting service
@@ -81,12 +84,14 @@ python -m http.server 8000
 ## 📖 Usage Guide
 
 ### Basic Usage
+
 1. Visit the [live soundboard](https://exios66.github.io/truth-deception-architecture/)
 2. Click on any sound button to play
 3. Use keyboard shortcuts (if enabled)
 4. Adjust volume using the slider controls
 
 ### Keyboard Shortcuts
+
 | Key | Action |
 |-----|--------|
 | 1-9 | Trigger sounds in first row |
@@ -96,6 +101,7 @@ python -m http.server 8000
 ## ⚙️ Configuration
 
 ### Sound Configuration
+
 ```json
 {
   "sounds": [
@@ -110,6 +116,7 @@ python -m http.server 8000
 ```
 
 ### Customization Options
+
 - Theme colors
 - Button layout
 - Keyboard mappings
@@ -130,6 +137,7 @@ Please read our [Contributing Guidelines](CONTRIBUTING.md) for more details.
 ## 🔧 Troubleshooting
 
 ### Common Issues
+
 1. **Sounds not playing**
    - Check browser audio permissions
    - Verify file paths in configuration

@@ -17,6 +17,15 @@ export API_KEY=test_api_key
 export DATABASE_URL=sqlite:///./test.db
 export LOG_LEVEL=DEBUG
 export ENVIRONMENT=test
+export DEBUG=true
+export PORT=8001
+export WORKERS=1
+export CORS_ORIGINS="*"
+export ALLOWED_HOSTS="*"
+export RATE_LIMIT_WINDOW=60
+export MAX_REQUESTS=100
+export MAX_CONCURRENT_WORKFLOWS=10
+export MAX_WORKFLOW_TIME=300
 
 # Initialize test database
 echo -e "${GREEN}Initializing test database...${NC}"

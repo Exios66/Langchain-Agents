@@ -18,12 +18,14 @@ from core.database import (
     update_workflow_status,
     get_db
 )
+from config import settings
 
 # Initialize FastAPI app
 app = FastAPI(
     title="Multi-Agent Workflow API",
     description="API for managing and executing multi-agent workflows",
-    version="1.0.0"
+    version=settings.API_VERSION,
+    debug=settings.DEBUG
 )
 
 # Authentication setup
@@ -31,14 +33,12 @@ API_KEY_NAME = "X-API-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=True)
 
 # Rate limiting setup
-RATE_LIMIT_WINDOW = 60  # seconds
-MAX_REQUESTS = 100  # requests per window
 request_history: Dict[str, List[float]] = {}
 
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,8 +47,8 @@ app.add_middleware(
 # Input validation models
 class WorkflowInput(BaseModel):
     input_data: Dict[str, Any]
-    agents: List[constr(regex='^(professor_athena|dr_milgrim|yaat)$')]
-    workflow_type: constr(regex='^(sequential|parallel|hybrid)$')
+    agents: List[constr(regex=f'^({"|".join(settings.AVAILABLE_AGENTS)})$')]
+    workflow_type: constr(regex=f'^({"|".join(settings.WORKFLOW_TYPES)})$')
 
     @validator('agents')
     def validate_agents(cls, v):
@@ -69,7 +69,7 @@ class StateResponse(BaseModel):
 # Authentication middleware
 async def verify_api_key(api_key: str = Depends(api_key_header)):
     """Verify API key."""
-    if not api_key or api_key != os.getenv("API_KEY", "default_key"):
+    if not api_key or api_key != settings.API_KEY:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid API key"
@@ -88,10 +88,10 @@ async def check_rate_limit(request: Request):
     # Clean old requests
     request_history[client_ip] = [
         req_time for req_time in request_history[client_ip]
-        if now - req_time < RATE_LIMIT_WINDOW
+        if now - req_time < settings.RATE_LIMIT_WINDOW
     ]
     
-    if len(request_history[client_ip]) >= MAX_REQUESTS:
+    if len(request_history[client_ip]) >= settings.MAX_REQUESTS:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Rate limit exceeded"
@@ -207,7 +207,7 @@ async def health_check():
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
-            "version": "1.0.0",
+            "version": settings.API_VERSION,
             "database": "connected"
         }
     except Exception as e:
@@ -216,7 +216,7 @@ async def health_check():
             content={
                 "status": "unhealthy",
                 "timestamp": datetime.utcnow().isoformat(),
-                "version": "1.0.0",
+                "version": settings.API_VERSION,
                 "error": str(e)
             }
         )

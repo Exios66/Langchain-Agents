@@ -8,19 +8,23 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 import logging
 from contextlib import contextmanager
+from config import settings
 
 # Initialize logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL.upper()),
+    format=settings.LOG_FORMAT
+)
 logger = logging.getLogger(__name__)
 
 # Initialize SQLite Database
-DATABASE_URL = "sqlite:///./multi_agent.db"
 engine = create_engine(
-    DATABASE_URL,
+    settings.DATABASE_URL,
     connect_args={
         "check_same_thread": False,
-        "timeout": 30
-    }
+        "timeout": settings.DB_POOL_TIMEOUT
+    },
+    pool_size=settings.DB_POOL_SIZE
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -1,11 +1,95 @@
 # config.py
 
 import os
-from typing import Dict, Any
-from dotenv import load_dotenv
+from typing import Dict, Any, List
+from pydantic import BaseSettings, Field
 
-# Load environment variables from .env file
-load_dotenv()
+class Settings(BaseSettings):
+    """Application settings."""
+    
+    # API Settings
+    API_KEY: str = Field(default=os.getenv("API_KEY", "default_key"), description="API key for authentication")
+    API_VERSION: str = "1.0.0"
+    DEBUG: bool = Field(default=bool(os.getenv("DEBUG", False)), description="Debug mode")
+    
+    # Database Settings
+    DATABASE_URL: str = Field(
+        default=os.getenv("DATABASE_URL", "sqlite:///./multi_agent.db"),
+        description="Database connection string"
+    )
+    DB_POOL_SIZE: int = Field(default=5, description="Database connection pool size")
+    DB_POOL_TIMEOUT: int = Field(default=30, description="Database connection timeout in seconds")
+    
+    # Server Settings
+    HOST: str = Field(default="0.0.0.0", description="Server host")
+    PORT: int = Field(default=int(os.getenv("PORT", 8000)), description="Server port")
+    WORKERS: int = Field(default=4, description="Number of worker processes")
+    
+    # Security Settings
+    CORS_ORIGINS: List[str] = Field(
+        default=os.getenv("CORS_ORIGINS", "*").split(","),
+        description="Allowed CORS origins"
+    )
+    ALLOWED_HOSTS: List[str] = Field(
+        default=os.getenv("ALLOWED_HOSTS", "*").split(","),
+        description="Allowed hosts"
+    )
+    
+    # Rate Limiting
+    RATE_LIMIT_WINDOW: int = Field(default=60, description="Rate limit window in seconds")
+    MAX_REQUESTS: int = Field(default=100, description="Maximum requests per window")
+    
+    # Workflow Settings
+    MAX_CONCURRENT_WORKFLOWS: int = Field(default=10, description="Maximum concurrent workflows")
+    MAX_WORKFLOW_TIME: int = Field(default=300, description="Maximum workflow execution time in seconds")
+    WORKFLOW_TYPES: List[str] = Field(
+        default=["sequential", "parallel", "hybrid"],
+        description="Available workflow types"
+    )
+    
+    # Agent Settings
+    AVAILABLE_AGENTS: List[str] = Field(
+        default=["professor_athena", "dr_milgrim", "yaat"],
+        description="Available agents"
+    )
+    AGENT_CONFIGS: Dict[str, Dict[str, Any]] = Field(
+        default={
+            "professor_athena": {
+                "max_concurrent_tasks": 3,
+                "specialties": ["research", "analysis", "planning"],
+                "response_timeout": 30
+            },
+            "dr_milgrim": {
+                "max_concurrent_tasks": 2,
+                "specialties": ["data_processing", "pattern_recognition"],
+                "response_timeout": 20
+            },
+            "yaat": {
+                "max_concurrent_tasks": 5,
+                "specialties": ["task_execution", "coordination"],
+                "response_timeout": 15
+            }
+        },
+        description="Agent-specific configurations"
+    )
+    
+    # Logging Settings
+    LOG_LEVEL: str = Field(
+        default=os.getenv("LOG_LEVEL", "INFO"),
+        description="Logging level"
+    )
+    LOG_FORMAT: str = Field(
+        default="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        description="Log format"
+    )
+    
+    class Config:
+        """Pydantic config."""
+        env_file = ".env"
+        case_sensitive = True
+
+# Create settings instance
+settings = Settings()
 
 # Webhook URLs for various services
 WEBHOOK_URLS = {
