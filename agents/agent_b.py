@@ -1,10 +1,10 @@
 # agents/agent_b.py
 from core.state import State
-from core.graph_builder import Command
-from typing import Literal
+from core.commands import Command
 
-def agent_b(state: State) -> Command[Literal['human_review', 'error_handler']]:
-    """Agent B decides whether to pass data for human review or handle an error."""
-    decision = state['data_store'].get('decision', 'human_review')
-    state['messages'].append(f"Agent B decided to call {decision}.")
-    return Command(goto=decision, update=state)
+def agent_b(state: State) -> State:
+    """Secondary agent for advanced processing."""
+    state['messages'].append("Agent B processing started.")
+    state['data_store']['b_processed'] = state['data_store'].get('a_processed', '').upper()
+    state['messages'].append("Agent B processing complete.")
+    return state
