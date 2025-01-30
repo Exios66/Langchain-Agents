@@ -28,7 +28,7 @@ Please add an appropriate changelog entry under the unreleased section in CHANGE
 - (If you fixed any bugs)
 ```
 
-## Checklist:
+## Checklist
 
 - [ ] My code follows the style guidelines of this project
 - [ ] I have performed a self-review of my own code
@@ -37,4 +37,4 @@ Please add an appropriate changelog entry under the unreleased section in CHANGE
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
-- [ ] I have added an entry to CHANGELOG.md under the unreleased section 
+- [ ] I have added an entry to CHANGELOG.md under the unreleased section
