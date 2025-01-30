@@ -46,6 +46,7 @@ data_store/
 output/
 temp/
 config.local.yaml
+config.py
 
 # Git
 .git/
