@@ -5,21 +5,22 @@ from unittest.mock import patch
 import os
 import json
 from datetime import datetime
+from config import settings
 
 from api.endpoints import app
 
 client = TestClient(app)
 
 # Test data
-VALID_API_KEY = "test_api_key"
+VALID_API_KEY = settings.API_KEY
 INVALID_API_KEY = "invalid_key"
 VALID_WORKFLOW_INPUT = {
     "input_data": {
         "query": "test query",
         "parameters": {"param1": "value1"}
     },
-    "agents": ["professor_athena", "dr_milgrim"],
-    "workflow_type": "sequential"
+    "agents": settings.AVAILABLE_AGENTS[:2],  # Use first two agents
+    "workflow_type": settings.WORKFLOW_TYPES[0]  # Use first workflow type
 }
 INVALID_WORKFLOW_INPUT = {
     "input_data": {},
@@ -40,7 +41,7 @@ def test_health_check():
     data = response.json()
     assert data["status"] == "healthy"
     assert "timestamp" in data
-    assert data["version"] == "1.0.0"
+    assert data["version"] == settings.API_VERSION
 
 def test_missing_api_key():
     """Test request without API key."""
@@ -77,7 +78,7 @@ def test_rate_limiting():
     """Test rate limiting."""
     headers = {"X-API-Key": VALID_API_KEY}
     # Make more requests than allowed
-    for _ in range(105):  # MAX_REQUESTS + 5
+    for _ in range(settings.MAX_REQUESTS + 5):
         response = client.post("/workflow/start/", headers=headers, json=VALID_WORKFLOW_INPUT)
         if response.status_code == 429:
             assert "Rate limit exceeded" in response.json()["detail"]
@@ -113,7 +114,7 @@ def test_concurrent_requests():
     import concurrent.futures
     
     headers = {"X-API-Key": VALID_API_KEY}
-    num_requests = 10
+    num_requests = min(10, settings.MAX_CONCURRENT_WORKFLOWS)
     
     with concurrent.futures.ThreadPoolExecutor(max_workers=num_requests) as executor:
         futures = [
@@ -163,7 +164,7 @@ def test_workflow_validation():
     test_cases = [
         # Empty input data
         {
-            "input": {"input_data": {}, "agents": ["professor_athena"], "workflow_type": "sequential"},
+            "input": {"input_data": {}, "agents": [settings.AVAILABLE_AGENTS[0]], "workflow_type": settings.WORKFLOW_TYPES[0]},
             "should_fail": True
         },
         # Invalid agent name
@@ -185,8 +186,8 @@ def test_workflow_validation():
         {
             "input": {
                 "input_data": {"query": "test"},
-                "agents": ["professor_athena"],
-                "workflow_type": "sequential"
+                "agents": [settings.AVAILABLE_AGENTS[0]],
+                "workflow_type": settings.WORKFLOW_TYPES[0]
             },
             "should_fail": False
         }

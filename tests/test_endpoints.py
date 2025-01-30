@@ -3,8 +3,9 @@ import requests
 import json
 import time
 from typing import Dict, Any
+from config import settings
 
-BASE_URL = "http://localhost:8004"  # Update this if your server is running on a different port
+BASE_URL = f"http://{settings.HOST}:{settings.PORT}"
 
 def test_workflow_start(input_data: Dict[str, Any]) -> Dict[str, Any]:
     """Test the workflow start endpoint with the given input data."""
@@ -16,7 +17,11 @@ def test_workflow_start(input_data: Dict[str, Any]) -> Dict[str, Any]:
     print(json.dumps(input_data, indent=2))
     
     try:
-        response = requests.post(url, json=input_data)
+        response = requests.post(
+            url,
+            json=input_data,
+            headers={"X-API-Key": settings.API_KEY}
+        )
         response.raise_for_status()
         result = response.json()
         
@@ -35,7 +40,10 @@ def test_workflow_state(state_id: int) -> Dict[str, Any]:
     print(f"GET {url}")
     
     try:
-        response = requests.get(url)
+        response = requests.get(
+            url,
+            headers={"X-API-Key": settings.API_KEY}
+        )
         response.raise_for_status()
         result = response.json()
         

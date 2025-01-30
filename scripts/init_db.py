@@ -9,14 +9,25 @@ import shutil
 import sqlite3
 from alembic.config import Config
 from alembic import command
+from config import settings
 
 # Setup logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL.upper()),
+    format=settings.LOG_FORMAT
+)
 logger = logging.getLogger(__name__)
+
+def get_database_path() -> Path:
+    """Get database path from URL."""
+    url = settings.DATABASE_URL
+    if url.startswith("sqlite:///"):
+        return Path(url.replace("sqlite:///", ""))
+    raise ValueError(f"Unsupported database URL: {url}")
 
 def backup_database():
     """Backup existing database if it exists."""
-    db_path = Path("multi_agent.db")
+    db_path = get_database_path()
     if db_path.exists():
         backup_path = db_path.with_suffix(".db.backup")
         logger.info(f"Backing up existing database to {backup_path}")
@@ -24,7 +35,7 @@ def backup_database():
 
 def drop_database():
     """Drop existing database if it exists."""
-    db_path = Path("multi_agent.db")
+    db_path = get_database_path()
     if db_path.exists():
         logger.info("Dropping existing database")
         db_path.unlink()
@@ -32,7 +43,8 @@ def drop_database():
 def init_database():
     """Initialize a new database."""
     logger.info("Initializing new database")
-    conn = sqlite3.connect("multi_agent.db")
+    db_path = get_database_path()
+    conn = sqlite3.connect(str(db_path))
     conn.close()
 
 def run_migrations():
@@ -53,7 +65,8 @@ def verify_database():
     """Verify database schema and connectivity."""
     logger.info("Verifying database")
     try:
-        conn = sqlite3.connect("multi_agent.db")
+        db_path = get_database_path()
+        conn = sqlite3.connect(str(db_path))
         cursor = conn.cursor()
         
         # Check workflow_states table
