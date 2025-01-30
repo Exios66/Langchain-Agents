@@ -1,6 +1,6 @@
 # agents/subgraph.py
 from core.state import State
-from langgraph.graph import StateGraph
+from core.graph_builder import StateGraph
 
 def sub_agent(state: State) -> State:
     """Sub-agent processes and normalizes input data."""
