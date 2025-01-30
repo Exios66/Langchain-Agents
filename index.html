@@ -279,7 +279,35 @@
             <a class="navbar-brand" href="#">
                 <i class="fas fa-robot me-2"></i>Multi-Agent Workflow System
             </a>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
+                <div class="me-4">
+                    <span class="badge bg-success" id="health-status">Healthy</span>
+                </div>
+                <div class="me-4 text-light">
+                    <small>
+                        <i class="fas fa-clock me-1"></i>Uptime: <span id="uptime">0s</span>
+                    </small>
+                </div>
+                <div class="me-4 text-light">
+                    <small>
+                        <i class="fas fa-exclamation-triangle me-1"></i>Errors: <span id="error-count">0</span>
+                    </small>
+                </div>
+                <div class="me-4 text-light">
+                    <small>
+                        <i class="fas fa-exclamation me-1"></i>Warnings: <span id="warning-count">0</span>
+                    </small>
+                </div>
+                <div class="me-4 text-light">
+                    <small>
+                        <i class="fas fa-exchange-alt me-1"></i>API Calls: <span id="api-calls">0</span>
+                    </small>
+                </div>
+                <div class="me-4 text-light">
+                    <small>
+                        <i class="fas fa-tachometer-alt me-1"></i>Avg Response: <span id="avg-response-time">0ms</span>
+                    </small>
+                </div>
                 <span class="text-light" id="connection-status">
                     <i class="fas fa-circle text-success me-2"></i>Connected
                 </span>
