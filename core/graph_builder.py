@@ -26,8 +26,20 @@ def build_graph() -> StateGraph:
     graph_builder.add_edge('subgraph', 'agent_a')
     graph_builder.add_edge('agent_a', 'agent_b')
     graph_builder.add_edge('agent_b', 'human_review')
-    graph_builder.add_edge('human_review', 'stream_output', condition=lambda s: s['data_store'].get('approved', False))
-    graph_builder.add_edge('human_review', 'error_handler', condition=lambda s: not s['data_store'].get('approved', False))
+    
+    # Add conditional edges using 'when'
+    graph_builder.add_edge(
+        'human_review',
+        'stream_output',
+        when=lambda s: s['data_store'].get('approved', False)
+    )
+    graph_builder.add_edge(
+        'human_review',
+        'error_handler',
+        when=lambda s: not s['data_store'].get('approved', False)
+    )
+    
+    # Final edges
     graph_builder.add_edge('stream_output', END)
     graph_builder.add_edge('error_handler', END)
     

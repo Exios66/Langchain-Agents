@@ -2,9 +2,10 @@
 from core.state import State
 
 def agent_a(state: State) -> State:
-    """Agent A processes data and updates the state."""
-    input_data = state['data_store'].get('input_data', '')
-    processed_data = input_data.upper()  # Example transformation
-    state['data_store']['agent_a_output'] = processed_data
-    state['messages'].append("Agent A processed the data.")
+    """Primary agent for initial processing."""
+    state['messages'].append("Agent A processing started.")
+    # Process the subgraph output
+    sub_processed = state['data_store'].get('sub_processed', '')
+    state['data_store']['a_processed'] = f"Agent A processed: {sub_processed}"
+    state['messages'].append("Agent A processing complete.")
     return state

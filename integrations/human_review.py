@@ -2,15 +2,17 @@
 from core.state import State
 
 def human_review(state: State) -> State:
-    """Human approval required before proceeding."""
-    state['messages'].append("Awaiting human review...")
-    user_input = input("Approve the processed data? (yes/no): ").strip().lower()
+    """Simulate human review of agent output."""
+    state['messages'].append("Human review started.")
     
-    if user_input != "yes":
-        state['messages'].append("Human review rejected the process.")
+    # Simulate review decision (in real implementation, this would be interactive)
+    processed_result = state['data_store'].get('b_processed', '')
+    if processed_result and len(processed_result) > 0:
+        state['data_store']['approved'] = True
+        state['messages'].append("Human review: Output approved.")
+    else:
         state['data_store']['approved'] = False
-        return state
+        state['data_store']['error'] = "Empty or invalid output"
+        state['messages'].append("Human review: Output rejected.")
     
-    state['messages'].append("Human review approved the process.")
-    state['data_store']['approved'] = True
     return state

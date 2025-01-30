@@ -1,8 +1,8 @@
 # run.py
 from core.workflow import WorkflowManager
-from core.state import State
 
 def main():
+    """Main execution function."""
     # Initialize workflow
     workflow = WorkflowManager()
     

@@ -1,6 +1,6 @@
 # agents/subgraph.py
 from core.state import State
-from core.graph_builder import StateGraph
+from langgraph.graph import StateGraph, START, END
 
 def sub_agent(state: State) -> State:
     """Sub-agent processes and normalizes input data."""
@@ -9,8 +9,19 @@ def sub_agent(state: State) -> State:
     state['messages'].append("Sub-agent preprocessing complete.")
     return state
 
-# Build the subgraph
-subgraph_builder = StateGraph(State)
-subgraph_builder.add_node('sub_agent', sub_agent)
-subgraph_builder.add_edge('sub_agent', 'agent_a')
-compiled_subgraph = subgraph_builder.compile()
+def build_subgraph() -> StateGraph:
+    """Build and return the subgraph."""
+    # Initialize subgraph
+    subgraph_builder = StateGraph(State)
+    
+    # Add nodes
+    subgraph_builder.add_node('sub_agent', sub_agent)
+    
+    # Add edges with START and END
+    subgraph_builder.add_edge(START, 'sub_agent')
+    subgraph_builder.add_edge('sub_agent', END)
+    
+    return subgraph_builder.compile()
+
+# Create compiled subgraph instance
+compiled_subgraph = build_subgraph()
