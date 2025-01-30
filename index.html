@@ -586,45 +586,69 @@
     </nav>
 
     <!-- Main Content -->
-    <main id="main-content" tabindex="-1">
-        <div class="main-container">
-            <div class="row" role="region" aria-label="Workflow Controls">
-                <!-- Workflow Control Panel -->
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
+    <div class="main-container">
+        <div class="row">
+            <!-- Workflow Control Panel -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
                             <i class="fas fa-cogs me-2"></i>Workflow Control
                         </div>
-                        <div class="card-body">
-                            <form id="workflow-form">
-                                <div class="mb-3">
-                                    <label for="input-data" class="form-label">Input Data</label>
-                                    <textarea class="form-control" id="input-data" rows="4" placeholder="Enter JSON input data" required></textarea>
-                                    <div class="form-text">Example: {"query": "analyze market trends", "parameters": {"timeframe": "1w"}}</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="agent-selection" class="form-label">Select Agents</label>
-                                    <select class="form-select" id="agent-selection" multiple required>
-                                        <option value="professor_athena">Professor Athena (Research)</option>
-                                        <option value="dr_milgrim">Dr. Milgrim (Analysis)</option>
-                                        <option value="yaat">YAAT (Task Execution)</option>
-                                    </select>
-                                    <div class="form-text">Hold Ctrl/Cmd to select multiple agents</div>
-                                </div>
-                                <div class="mb-3">
-                                    <label for="workflow-type" class="form-label">Workflow Type</label>
-                                    <select class="form-select" id="workflow-type" required>
-                                        <option value="sequential">Sequential</option>
-                                        <option value="parallel">Parallel</option>
-                                        <option value="hybrid">Hybrid</option>
-                                    </select>
-                                </div>
-                                <button type="submit" class="btn btn-primary w-100" id="start-workflow-btn">
-                                    <i class="fas fa-play me-2"></i>Start Workflow
-                                </button>
-                            </form>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="mode-switch">
+                            <label class="form-check-label text-light" for="mode-switch">Demo Mode</label>
                         </div>
                     </div>
+                    <div class="card-body">
+                        <!-- Demo Mode Controls -->
+                        <div id="demo-controls" style="display: none;">
+                            <div class="mb-3">
+                                <label for="scenario-select" class="form-label">Select Scenario</label>
+                                <select class="form-select" id="scenario-select">
+                                    <option value="market_analysis">Market Analysis</option>
+                                    <option value="real_time_monitoring">Real-time Monitoring</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="demo-speed" class="form-label">Simulation Speed</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="range" class="form-range me-2" id="demo-speed" min="0.5" max="2" step="0.1" value="1">
+                                    <span id="speed-value">1x</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Production Mode Form -->
+                        <form id="workflow-form">
+                            <div class="mb-3">
+                                <label for="input-data" class="form-label">Input Data</label>
+                                <textarea class="form-control" id="input-data" rows="4" placeholder="Enter JSON input data" required></textarea>
+                                <div class="form-text">Example: {"query": "analyze market trends", "parameters": {"timeframe": "1w"}}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="agent-selection" class="form-label">Select Agents</label>
+                                <select class="form-select" id="agent-selection" multiple required>
+                                    <option value="professor_athena">Professor Athena (Research)</option>
+                                    <option value="dr_milgrim">Dr. Milgrim (Analysis)</option>
+                                    <option value="yaat">YAAT (Task Execution)</option>
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple agents</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="workflow-type" class="form-label">Workflow Type</label>
+                                <select class="form-select" id="workflow-type" required>
+                                    <option value="sequential">Sequential</option>
+                                    <option value="parallel">Parallel</option>
+                                    <option value="hybrid">Hybrid</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100" id="start-workflow-btn">
+                                <i class="fas fa-play me-2"></i>Start Workflow
+                            </button>
+                        </form>
+                    </div>
+                </div>
 
                     <!-- Workflow Status -->
                     <div class="card">
@@ -639,6 +663,35 @@
                         </div>
                     </div>
                 </div>
+                <!-- Performance Metrics -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="fas fa-chart-line me-2"></i>Performance Metrics
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">CPU Usage</label>
+                            <div class="progress">
+                                <div id="cpu-usage" class="progress-bar bg-success" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="CPU Usage">0%</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Memory Usage</label>
+                            <div class="progress">
+                                <div id="memory-usage" class="progress-bar bg-info" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" title="Memory Usage">0%</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Response Time</label>
+                            <div id="response-time">-</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Active Tasks</label>
+                            <div id="active-tasks">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
                 <!-- Visualization Panel -->
                 <div class="col-md-8">
@@ -652,23 +705,48 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Message Log -->
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <div>
-                                <i class="fas fa-comments me-2"></i>Message Log
-                            </div>
-                            <button class="btn btn-sm btn-outline-light" id="clear-log" title="Clear message log">
-                                <i class="fas fa-trash-alt"></i>
+            <!-- Visualization Panel -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-project-diagram me-2"></i>Workflow Visualization
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-light" id="zoom-in" title="Zoom In">
+                                <i class="fas fa-search-plus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" id="zoom-out" title="Zoom Out">
+                                <i class="fas fa-search-minus"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-light" id="reset-view" title="Reset View">
+                                <i class="fas fa-compress-arrows-alt"></i>
                             </button>
                         </div>
-                        <div class="card-body">
-                            <div id="messages"></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="visualization-container">
+                            <div id="network-graph"></div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Message Log -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-comments me-2"></i>Message Log
+                        </div>
+                        <button class="btn btn-sm btn-outline-light" id="clear-log" title="Clear message log">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="messages" class="overflow-auto" style="max-height: 300px;"></div>
+                    </div>
+                </div>
             </div>
+        </div>
 
             <!-- Data Store Panel -->
             <div class="row" role="region" aria-label="Data Store">
@@ -710,58 +788,232 @@
     </div>
 
     <!-- Error Toast -->
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        <div class="toast" id="error-toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header bg-danger text-white">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                <strong class="me-auto">Error</strong>
-                <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    <div class="toast" id="error-toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">Error</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="error-message"></div>
+    </div>
+
+    <!-- Agent Details Modal -->
+    <div class="modal fade" id="agent-details-modal" tabindex="-1" aria-labelledby="agent-details-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="agent-details-label">Agent Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Name:</strong> <span id="agent-name"></span></p>
+                                    <p><strong>Status:</strong> <span id="agent-status"></span></p>
+                                    <p><strong>Specialty:</strong> <span id="agent-specialty"></span></p>
+                                    <p><strong>Tasks Completed:</strong> <span id="agent-tasks"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-chart-line me-2"></i>Performance Metrics
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Confidence Level</label>
+                                        <div class="progress">
+                                            <div id="agent-confidence" class="progress-bar bg-success" role="progressbar"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Success Rate</label>
+                                        <div class="progress">
+                                            <div id="agent-success-rate" class="progress-bar bg-info" role="progressbar"></div>
+                                        </div>
+                                    </div>
+                                    <p><strong>Avg. Response Time:</strong> <span id="agent-response-time"></span></p>
+                                    <p><strong>Task Complexity:</strong> <span id="agent-task-complexity"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-history me-2"></i>Recent Activity
+                                </div>
+                                <div class="card-body">
+                                    <div id="agent-activity-log" class="overflow-auto" style="max-height: 200px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="view-agent-tasks">View Tasks</button>
+                </div>
             </div>
-            <div class="toast-body" id="error-message"></div>
+        </div>
+    </div>
+
+    <!-- Agent Tasks Modal -->
+    <div class="modal fade" id="agent-tasks-modal" tabindex="-1" aria-labelledby="agent-tasks-label" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="agent-tasks-label">Agent Tasks</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="task-search" placeholder="Search tasks...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="task-status-filter">
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                                <option value="failed">Failed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="task-type-filter">
+                                <option value="all">All Types</option>
+                                <option value="analysis">Analysis</option>
+                                <option value="processing">Processing</option>
+                                <option value="coordination">Coordination</option>
+                                <option value="execution">Execution</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th>Started</th>
+                                    <th>Duration</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tasks-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                    <nav aria-label="Task pagination">
+                        <ul class="pagination justify-content-center" id="tasks-pagination">
+                        </ul>
+                    </nav>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="export-tasks">
+                        <i class="fas fa-download me-2"></i>Export Tasks
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Details Modal -->
+    <div class="modal fade" id="task-details-modal" tabindex="-1" aria-labelledby="task-details-label" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="task-details-label">Task Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>ID:</strong> <span id="task-id"></span></p>
+                                    <p><strong>Type:</strong> <span id="task-type"></span></p>
+                                    <p><strong>Status:</strong> <span id="task-status"></span></p>
+                                    <p><strong>Description:</strong> <span id="task-description"></span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-clock me-2"></i>Timing Information
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Started:</strong> <span id="task-started"></span></p>
+                                    <p><strong>Completed:</strong> <span id="task-completed"></span></p>
+                                    <p><strong>Duration:</strong> <span id="task-duration"></span></p>
+                                    <div class="progress">
+                                        <div id="task-progress" class="progress-bar" role="progressbar"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-code me-2"></i>Task Results
+                                </div>
+                                <div class="card-body">
+                                    <pre id="task-results" class="bg-light p-3 rounded"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <i class="fas fa-history me-2"></i>Task History
+                                </div>
+                                <div class="card-body">
+                                    <div id="task-history" class="overflow-auto" style="max-height: 200px;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="retry-task">
+                        <i class="fas fa-redo me-2"></i>Retry Task
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <!-- Load scripts with error handling -->
-    <script>
-        // Resource loading error handling
-        function handleStyleError(stylesheet, name) {
-            const errorsContainer = document.getElementById('resource-errors');
-            const error = document.createElement('div');
-            error.className = 'resource-error alert alert-warning';
-            error.innerHTML = `Failed to load ${name}. Some styles may be missing.`;
-            errorsContainer.appendChild(error);
-        }
-
-        function handleScriptError(script, name) {
-            const errorsContainer = document.getElementById('resource-errors');
-            const error = document.createElement('div');
-            error.className = 'resource-error alert alert-danger';
-            error.innerHTML = `Failed to load ${name}. Some features may not work.`;
-            errorsContainer.appendChild(error);
-            
-            if (name === 'Visualization Library') {
-                document.getElementById('network-graph').innerHTML = 
-                    '<div class="alert alert-warning">Visualization unavailable. Please check your connection.</div>';
-            }
-        }
-
-        // Dynamically load scripts with error handling
-        function loadScript(url, name) {
-            return new Promise((resolve, reject) => {
-                const script = document.createElement('script');
-                script.src = url;
-                script.onload = resolve;
-                script.onerror = () => {
-                    handleScriptError(script, name);
-                    reject(new Error(`Failed to load ${name}`));
-                };
-                document.body.appendChild(script);
-            });
-        }
-    </script>
-
-    <!-- Load required libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+    
     <script>
         Promise.all([
             loadScript('https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js', 'Bootstrap'),
@@ -891,7 +1143,7 @@
             selectedWorkflowType: 'sequential'
         };
 
-        // Initialize network visualization with error handling
+        // Enhanced network visualization
         function initializeNetwork() {
             const container = document.getElementById('network-graph');
             if (typeof vis === 'undefined') {
@@ -909,24 +1161,51 @@
                             color: '#333'
                         },
                         borderWidth: 2,
-                        shadow: true
+                        shadow: true,
+                        scaling: {
+                            min: 20,
+                            max: 60
+                        }
                     },
                     edges: {
                         width: 2,
                         color: { inherit: 'from' },
                         smooth: {
-                            type: 'continuous'
+                            type: 'continuous',
+                            forceDirection: 'none',
+                            roundness: 0.5
                         },
                         arrows: {
                             to: { enabled: true, scaleFactor: 1 }
+                        },
+                        font: {
+                            size: 12,
+                            align: 'middle'
                         }
                     },
                     physics: {
-                        stabilization: false,
+                        enabled: true,
                         barnesHut: {
                             gravitationalConstant: -80000,
                             springConstant: 0.001,
-                            springLength: 200
+                            springLength: 200,
+                            avoidOverlap: 0.5
+                        },
+                        stabilization: {
+                            enabled: true,
+                            iterations: 1000,
+                            updateInterval: 50
+                        }
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 200,
+                        zoomView: true,
+                        dragView: true,
+                        navigationButtons: false,
+                        keyboard: {
+                            enabled: true,
+                            bindToWindow: false
                         }
                     }
                 };
@@ -937,43 +1216,519 @@
                 };
 
                 state.networkInstance = new vis.Network(container, data, options);
+
+                // Add network events
+                state.networkInstance.on('stabilizationProgress', function(params) {
+                    const progress = Math.round(params.iterations / params.total * 100);
+                    document.getElementById('loading-spinner').style.display = 'block';
+                    document.getElementById('loading-spinner').querySelector('p').textContent = 
+                        `Stabilizing network... ${progress}%`;
+                });
+
+                state.networkInstance.on('stabilizationIterationsDone', function() {
+                    document.getElementById('loading-spinner').style.display = 'none';
+                });
+
+                state.networkInstance.on('click', function(params) {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const agent = DEMO_DATA.agents.find(a => a.id === nodeId) || 
+                                    (state.currentData?.active_agents || []).find(a => a.id === nodeId);
+                        if (agent) {
+                            showAgentDetails(agent);
+                        }
+                    }
+                });
+
+                // Add zoom controls
+                document.getElementById('zoom-in').addEventListener('click', () => {
+                    const scale = state.networkInstance.getScale() * 1.2;
+                    state.networkInstance.moveTo({ scale: scale });
+                });
+
+                document.getElementById('zoom-out').addEventListener('click', () => {
+                    const scale = state.networkInstance.getScale() / 1.2;
+                    state.networkInstance.moveTo({ scale: scale });
+                });
+
+                document.getElementById('reset-view').addEventListener('click', () => {
+                    state.networkInstance.fit({
+                        animation: {
+                            duration: 1000,
+                            easingFunction: 'easeInOutQuad'
+                        }
+                    });
+                });
+
+                return true;
             } catch (error) {
                 container.innerHTML = `<div class="alert alert-danger">Failed to initialize visualization: ${error.message}</div>`;
+                return false;
             }
         }
 
-        // Update network visualization
+        // Enhanced visualization update with performance optimization
         function updateVisualization(agents, messages) {
             if (!state.networkInstance) return;
 
-            const nodes = new vis.DataSet();
-            const edges = new vis.DataSet();
+            try {
+                const nodes = new vis.DataSet();
+                const edges = new vis.DataSet();
+                const existingNodes = state.networkInstance.body.data.nodes;
+                const existingEdges = state.networkInstance.body.data.edges;
 
-            // Add agent nodes
-            agents.forEach(agent => {
-                nodes.add({
-                    id: agent.id,
-                    label: agent.name,
-                    color: {
-                        background: '#3498db',
-                        border: '#2980b9'
+                // Update nodes with animation
+                agents.forEach(agent => {
+                    const existingNode = existingNodes.get(agent.id);
+                    const nodeColor = getAgentColor(agent);
+                    
+                    nodes.add({
+                        id: agent.id,
+                        label: agent.name,
+                        color: nodeColor,
+                        title: generateAgentTooltip(agent),
+                        size: getNodeSize(agent),
+                        font: {
+                            size: 14,
+                            color: nodeColor.border
+                        },
+                        shadow: {
+                            enabled: true,
+                            color: 'rgba(0,0,0,0.2)',
+                            size: 10
+                        }
+                    });
+                });
+
+                // Update edges with animation
+                messages.forEach((msg, index) => {
+                    const edgeId = `${msg.from}-${msg.to}-${index}`;
+                    edges.add({
+                        id: edgeId,
+                        from: msg.from,
+                        to: msg.to,
+                        label: msg.type,
+                        arrows: 'to',
+                        color: getMessageColor(msg),
+                        font: {
+                            size: 12,
+                            color: '#666',
+                            strokeWidth: 2,
+                            strokeColor: '#fff'
+                        },
+                        smooth: {
+                            type: 'curvedCW',
+                            roundness: 0.2
+                        }
+                    });
+                });
+
+                // Update the network with animation
+                const updateOptions = {
+                    animation: {
+                        duration: 1000,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                };
+
+                state.networkInstance.setData({ nodes, edges });
+                state.networkInstance.setOptions(updateOptions);
+
+            } catch (error) {
+                console.error('Error updating visualization:', error);
+                showError('Failed to update visualization');
+            }
+        }
+
+        // Utility functions for visualization
+        function getAgentColor(agent) {
+            const colors = {
+                professor_athena: { background: '#3498db', border: '#2980b9' },
+                dr_milgrim: { background: '#e74c3c', border: '#c0392b' },
+                yaat: { background: '#2ecc71', border: '#27ae60' }
+            };
+            return colors[agent.id] || { background: '#95a5a6', border: '#7f8c8d' };
+        }
+
+        function getMessageColor(message) {
+            const colors = {
+                query: '#3498db',
+                response: '#2ecc71',
+                update: '#e67e22',
+                error: '#e74c3c'
+            };
+            return colors[message.type] || '#95a5a6';
+        }
+
+        function getNodeSize(agent) {
+            return 30 + (agent.tasks_completed * 2);
+        }
+
+        function generateAgentTooltip(agent) {
+            return `
+                <div class="agent-tooltip">
+                    <strong>${agent.name}</strong><br>
+                    Status: ${agent.status}<br>
+                    Tasks: ${agent.tasks_completed}<br>
+                    ${agent.specialty ? `Specialty: ${agent.specialty}<br>` : ''}
+                    ${agent.confidence ? `Confidence: ${(agent.confidence * 100).toFixed(1)}%<br>` : ''}
+                    ${agent.performance_metrics ? `
+                        Response Time: ${agent.performance_metrics.avg_response_time}ms<br>
+                        Success Rate: ${(agent.performance_metrics.success_rate * 100).toFixed(1)}%
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        // Enhanced agent details display
+        function showAgentDetails(agent) {
+            const modal = new bootstrap.Modal(document.getElementById('agent-details-modal'));
+            
+            // Update basic information
+            document.getElementById('agent-name').textContent = agent.name;
+            document.getElementById('agent-status').textContent = agent.status;
+            document.getElementById('agent-specialty').textContent = agent.specialty || 'N/A';
+            document.getElementById('agent-tasks').textContent = agent.tasks_completed;
+
+            // Update performance metrics
+            if (agent.performance_metrics) {
+                const confidence = document.getElementById('agent-confidence');
+                confidence.style.width = `${agent.confidence * 100}%`;
+                confidence.textContent = `${(agent.confidence * 100).toFixed(1)}%`;
+
+                const successRate = document.getElementById('agent-success-rate');
+                successRate.style.width = `${agent.performance_metrics.success_rate * 100}%`;
+                successRate.textContent = `${(agent.performance_metrics.success_rate * 100).toFixed(1)}%`;
+
+                document.getElementById('agent-response-time').textContent = 
+                    `${agent.performance_metrics.avg_response_time}ms`;
+                document.getElementById('agent-task-complexity').textContent = 
+                    agent.performance_metrics.task_complexity?.toFixed(2) || 'N/A';
+            }
+
+            // Update activity log
+            const activityLog = document.getElementById('agent-activity-log');
+            activityLog.innerHTML = '';
+            
+            if (agent.current_tasks && agent.current_tasks.length > 0) {
+                agent.current_tasks.forEach(task => {
+                    const taskElement = document.createElement('div');
+                    taskElement.className = 'log-entry';
+                    taskElement.innerHTML = `
+                        <span class="timestamp">[${new Date(task.timestamp).toLocaleTimeString()}]</span>
+                        <span class="message">${task.description}</span>
+                    `;
+                    activityLog.appendChild(taskElement);
+                });
+            } else {
+                activityLog.innerHTML = '<div class="text-muted">No recent activity</div>';
+            }
+
+            // Setup view tasks button
+            document.getElementById('view-agent-tasks').onclick = () => {
+                modal.hide();
+                showAgentTasks(agent);
+            };
+
+            modal.show();
+        }
+
+        // Show agent tasks in a separate view
+        function showAgentTasks(agent) {
+            const modal = new bootstrap.Modal(document.getElementById('agent-tasks-modal'));
+            let currentPage = 1;
+            const tasksPerPage = 10;
+            let filteredTasks = [];
+
+            // Update modal title
+            document.getElementById('agent-tasks-label').textContent = `Tasks - ${agent.name}`;
+
+            // Function to filter tasks
+            function filterTasks() {
+                const searchTerm = document.getElementById('task-search').value.toLowerCase();
+                const statusFilter = document.getElementById('task-status-filter').value;
+                const typeFilter = document.getElementById('task-type-filter').value;
+
+                filteredTasks = (agent.current_tasks || []).filter(task => {
+                    const matchesSearch = task.description.toLowerCase().includes(searchTerm);
+                    const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+                    const matchesType = typeFilter === 'all' || task.type === typeFilter;
+                    return matchesSearch && matchesStatus && matchesType;
+                });
+
+                updateTasksTable();
+                updatePagination();
+            }
+
+            // Function to update tasks table
+            function updateTasksTable() {
+                const tableBody = document.getElementById('tasks-table-body');
+                tableBody.innerHTML = '';
+
+                const startIndex = (currentPage - 1) * tasksPerPage;
+                const endIndex = startIndex + tasksPerPage;
+                const tasksToShow = filteredTasks.slice(startIndex, endIndex);
+
+                tasksToShow.forEach(task => {
+                    const row = document.createElement('tr');
+                    const duration = task.completed_at ? 
+                        (new Date(task.completed_at) - new Date(task.started_at)) / 1000 : 
+                        'In Progress';
+
+                    row.innerHTML = `
+                        <td>${task.id}</td>
+                        <td><span class="badge bg-secondary">${task.type}</span></td>
+                        <td>${task.description}</td>
+                        <td>
+                            <span class="badge bg-${getStatusColor(task.status)}">
+                                ${task.status}
+                            </span>
+                        </td>
+                        <td>${new Date(task.started_at).toLocaleString()}</td>
+                        <td>${typeof duration === 'number' ? duration.toFixed(2) + 's' : duration}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="viewTaskDetails('${task.id}')">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Function to update pagination
+            function updatePagination() {
+                const pagination = document.getElementById('tasks-pagination');
+                const totalPages = Math.ceil(filteredTasks.length / tasksPerPage);
+                
+                pagination.innerHTML = '';
+                
+                // Previous button
+                pagination.innerHTML += `
+                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+                    </li>
+                `;
+
+                // Page numbers
+                for (let i = 1; i <= totalPages; i++) {
+                    pagination.innerHTML += `
+                        <li class="page-item ${currentPage === i ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                        </li>
+                    `;
+                }
+
+                // Next button
+                pagination.innerHTML += `
+                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                        <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+                    </li>
+                `;
+
+                // Add click handlers
+                pagination.querySelectorAll('.page-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        const newPage = parseInt(e.target.dataset.page);
+                        if (!isNaN(newPage) && newPage > 0 && newPage <= totalPages) {
+                            currentPage = newPage;
+                            updateTasksTable();
+                            updatePagination();
+                        }
+                    });
+                });
+            }
+
+            // Function to get status color
+            function getStatusColor(status) {
+                const colors = {
+                    pending: 'warning',
+                    in_progress: 'info',
+                    completed: 'success',
+                    failed: 'danger'
+                };
+                return colors[status] || 'secondary';
+            }
+
+            // Setup event listeners
+            document.getElementById('task-search').addEventListener('input', filterTasks);
+            document.getElementById('task-status-filter').addEventListener('change', filterTasks);
+            document.getElementById('task-type-filter').addEventListener('change', filterTasks);
+
+            // Setup export button
+            document.getElementById('export-tasks').addEventListener('click', () => {
+                const csv = convertTasksToCSV(filteredTasks);
+                downloadCSV(csv, `${agent.name.toLowerCase()}-tasks.csv`);
+            });
+
+            // Initial load
+            filterTasks();
+            modal.show();
+        }
+
+        // Utility function to convert tasks to CSV
+        function convertTasksToCSV(tasks) {
+            const headers = ['ID', 'Type', 'Description', 'Status', 'Started', 'Completed', 'Duration'];
+            const rows = tasks.map(task => {
+                const duration = task.completed_at ? 
+                    (new Date(task.completed_at) - new Date(task.started_at)) / 1000 : 
+                    '';
+                return [
+                    task.id,
+                    task.type,
+                    task.description,
+                    task.status,
+                    new Date(task.started_at).toLocaleString(),
+                    task.completed_at ? new Date(task.completed_at).toLocaleString() : '',
+                    duration ? duration.toFixed(2) + 's' : ''
+                ];
+            });
+            return [headers, ...rows].map(row => row.join(',')).join('\n');
+        }
+
+        // Utility function to download CSV
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, filename);
+            } else {
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        // Function to view task details
+        function viewTaskDetails(taskId) {
+            const modal = new bootstrap.Modal(document.getElementById('task-details-modal'));
+            
+            // Fetch task details (in production mode)
+            if (!state.demoMode) {
+                fetchTaskDetails(taskId).then(updateTaskDetailsModal);
+            } else {
+                // Use demo data
+                const demoTask = {
+                    id: taskId,
+                    type: 'analysis',
+                    status: 'completed',
+                    description: 'Analyze market trends for Q3 2024',
+                    started_at: new Date(Date.now() - 3600000).toISOString(),
+                    completed_at: new Date().toISOString(),
+                    progress: 100,
+                    results: {
+                        findings: ['Trend A', 'Trend B', 'Trend C'],
+                        confidence: 0.95,
+                        recommendations: ['Action 1', 'Action 2']
                     },
-                    title: `Status: ${agent.status}<br>Tasks: ${agent.tasks_completed}`
-                });
-            });
+                    history: [
+                        { timestamp: new Date(Date.now() - 3600000).toISOString(), event: 'Task started' },
+                        { timestamp: new Date(Date.now() - 1800000).toISOString(), event: 'Processing data' },
+                        { timestamp: new Date().toISOString(), event: 'Task completed' }
+                    ]
+                };
+                updateTaskDetailsModal(demoTask);
+            }
 
-            // Add message edges
-            messages.forEach((msg, index) => {
-                edges.add({
-                    id: index,
-                    from: msg.from,
-                    to: msg.to,
-                    label: msg.type,
-                    arrows: 'to'
-                });
-            });
+            modal.show();
+        }
 
-            state.networkInstance.setData({ nodes, edges });
+        // Function to fetch task details from API
+        async function fetchTaskDetails(taskId) {
+            try {
+                const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/tasks/${taskId}/`);
+                return response;
+            } catch (error) {
+                showError(`Failed to fetch task details: ${error.message}`);
+                return null;
+            }
+        }
+
+        // Function to update task details modal
+        function updateTaskDetailsModal(task) {
+            if (!task) return;
+
+            // Update basic information
+            document.getElementById('task-id').textContent = task.id;
+            document.getElementById('task-type').textContent = task.type;
+            document.getElementById('task-status').innerHTML = `
+                <span class="badge bg-${getStatusColor(task.status)}">${task.status}</span>
+            `;
+            document.getElementById('task-description').textContent = task.description;
+
+            // Update timing information
+            document.getElementById('task-started').textContent = new Date(task.started_at).toLocaleString();
+            document.getElementById('task-completed').textContent = task.completed_at ? 
+                new Date(task.completed_at).toLocaleString() : 'In Progress';
+            
+            const duration = task.completed_at ? 
+                (new Date(task.completed_at) - new Date(task.started_at)) / 1000 : 
+                (Date.now() - new Date(task.started_at)) / 1000;
+            document.getElementById('task-duration').textContent = 
+                `${duration.toFixed(2)} seconds`;
+
+            // Update progress bar
+            const progress = document.getElementById('task-progress');
+            progress.style.width = `${task.progress || 0}%`;
+            progress.textContent = `${task.progress || 0}%`;
+            progress.className = `progress-bar bg-${getProgressColor(task.progress || 0)}`;
+
+            // Update results
+            const results = document.getElementById('task-results');
+            results.textContent = task.results ? 
+                JSON.stringify(task.results, null, 2) : 
+                'No results available';
+
+            // Update history
+            const history = document.getElementById('task-history');
+            history.innerHTML = '';
+            if (task.history && task.history.length > 0) {
+                task.history.forEach(entry => {
+                    const entryElement = document.createElement('div');
+                    entryElement.className = 'log-entry';
+                    entryElement.innerHTML = `
+                        <span class="timestamp">[${new Date(entry.timestamp).toLocaleString()}]</span>
+                        <span class="message">${entry.event}</span>
+                    `;
+                    history.appendChild(entryElement);
+                });
+            } else {
+                history.innerHTML = '<div class="text-muted">No history available</div>';
+            }
+
+            // Setup retry button
+            const retryButton = document.getElementById('retry-task');
+            retryButton.style.display = task.status === 'failed' ? 'block' : 'none';
+            retryButton.onclick = () => retryTask(task.id);
+        }
+
+        // Function to get progress color
+        function getProgressColor(progress) {
+            if (progress >= 100) return 'success';
+            if (progress >= 70) return 'info';
+            if (progress >= 30) return 'warning';
+            return 'danger';
+        }
+
+        // Function to retry failed task
+        async function retryTask(taskId) {
+            if (state.demoMode) {
+                showSuccess('Task retry simulated in demo mode');
+                return;
+            }
+
+            try {
+                const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/tasks/${taskId}/retry`, {
+                    method: 'POST'
+                });
+                showSuccess('Task retry initiated successfully');
+                viewTaskDetails(taskId); // Refresh the modal
+            } catch (error) {
+                showError(`Failed to retry task: ${error.message}`);
+            }
         }
 
         // Add message to log
@@ -1021,881 +1776,149 @@
             new bootstrap.Toast(document.getElementById('error-toast')).show();
         }
 
-        // Static demo mode functions
-        function activateStaticDemo() {
-            state.demoMode = true;
-            document.getElementById('demo-mode-banner').style.display = 'block';
-            document.getElementById('static-demo-controls').style.display = 'block';
-            document.getElementById('offline-overlay').style.display = 'none';
-            
-            // Update UI for demo mode
-            updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
-            updateStatus('running');
-            addMessage('Demo mode activated', 'info');
-            
-            // Start demo simulation
-            simulateDemoWorkflow();
-        }
-
-        function simulateDemoWorkflow() {
-            let step = 0;
-            const maxSteps = 10;
-            const messageTypes = ['query', 'analysis', 'response', 'update', 'result'];
-            const taskTypes = [
-                'Initializing research parameters',
-                'Gathering data samples',
-                'Processing information',
-                'Analyzing patterns',
-                'Generating insights',
-                'Validating results',
-                'Preparing report'
-            ];
-            
-            state.updateInterval = setInterval(() => {
-                step++;
-                // Update progress
-                const progress = (step / maxSteps) * 100;
-                DEMO_DATA.data_store.progress = progress;
-                DEMO_DATA.data_store.current_task = taskTypes[Math.floor((taskTypes.length * step) / maxSteps)];
-                
-                // Generate realistic message
-                const fromAgent = DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
-                const toAgent = DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
-                const messageType = messageTypes[Math.floor(Math.random() * messageTypes.length)];
-                
-                const newMessage = {
-                    id: Date.now(),
-                    from: fromAgent.id,
-                    to: toAgent.id,
-                    type: messageType,
-                    content: `${fromAgent.name} is ${DEMO_DATA.data_store.current_task.toLowerCase()}`
-                };
-                
-                DEMO_DATA.messages.push(newMessage);
-                
-                // Update UI with more detailed information
-                updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
-                document.getElementById('messages-count').textContent = DEMO_DATA.messages.length;
-                document.getElementById('data-store').textContent = JSON.stringify(DEMO_DATA.data_store, null, 2);
-                addMessage(newMessage.content, messageType === 'error' ? 'error' : 'info');
-                
-                // Update agent status randomly
-                DEMO_DATA.agents.forEach(agent => {
-                    agent.tasks_completed += Math.random() > 0.7 ? 1 : 0;
-                    agent.confidence = Math.max(0.5, Math.min(1, agent.confidence + (Math.random() - 0.5) * 0.1));
-                });
-                
-                if (step >= maxSteps) {
-                    clearInterval(state.updateInterval);
-                    updateStatus('completed');
-                    addMessage('Demo workflow completed successfully', 'success');
-                    document.getElementById('loading-spinner').style.display = 'none';
-                }
-            }, CONFIG.UPDATE_INTERVAL * state.demoSpeed);
-        }
-
-        function resetDemo() {
-            clearInterval(state.updateInterval);
-            DEMO_DATA.messages = DEMO_DATA.messages.slice(0, 3);
-            DEMO_DATA.data_store.progress = 0;
-            updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
-            updateStatus('not_started');
-            document.getElementById('messages').innerHTML = '';
-            addMessage('Demo reset', 'info');
-        }
-
-        // Enhanced error handling and retry logic
-        async function fetchWithRetry(url, options = {}) {
-            for (let i = 0; i < CONFIG.MAX_RETRIES; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                    return await response.json();
-                } catch (error) {
-                    if (i === CONFIG.MAX_RETRIES - 1) throw error;
-                    await new Promise(resolve => setTimeout(resolve, CONFIG.RETRY_DELAY));
-                }
-            }
-        }
-
-        // Enhanced connection check with offline mode handling
-        async function checkConnection() {
-            try {
-                const response = await fetch(`${CONFIG.API_BASE_URL}/health/`);
-                if (!response.ok) throw new Error('API unavailable');
-                
-                document.getElementById('connection-status').innerHTML = `
-                    <i class="fas fa-circle text-success me-2"></i>Connected
-                `;
-                return true;
-            } catch (error) {
-                document.getElementById('connection-status').innerHTML = `
-                    <i class="fas fa-circle text-danger me-2"></i>Disconnected
-                    <small class="text-warning">(${error.message})</small>
-                `;
-                
-                // Show offline overlay if not in demo mode
-                if (!state.demoMode) {
-                    document.getElementById('offline-overlay').style.display = 'flex';
-                }
-                return false;
-            }
-        }
-
-        // Production mode utilities
-        const ProductionMode = {
-            async initializeDatabase() {
-                try {
-                    const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/database/initialize`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(CONFIG.DATABASE)
-                    });
-                    return response.success;
-                } catch (error) {
-                    console.error('Database initialization failed:', error);
-                    return false;
-                }
-            },
-
-            async getAgentMetrics(agentId) {
-                try {
-                    return await fetchWithRetry(`${CONFIG.API_BASE_URL}/agents/${agentId}/metrics`);
-                } catch (error) {
-                    console.error(`Failed to fetch metrics for agent ${agentId}:`, error);
-                    return null;
-                }
-            },
-
-            async updateWorkflowState(stateId, updates) {
-                try {
-                    return await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/${stateId}/update`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updates)
-                    });
-                } catch (error) {
-                    console.error('Failed to update workflow state:', error);
-                    return false;
-                }
-            },
-
-            startPerformanceMonitoring() {
-                if (!CONFIG.PERFORMANCE_METRICS.enabled) return;
-                
-                const metrics = {
-                    timestamps: [],
-                    cpu: [],
-                    memory: [],
-                    responseTime: []
-                };
-
-                return setInterval(async () => {
-                    try {
-                        const perfData = await fetchWithRetry(`${CONFIG.API_BASE_URL}/system/metrics`);
-                        
-                        metrics.timestamps.push(Date.now());
-                        metrics.cpu.push(perfData.cpu_usage);
-                        metrics.memory.push(perfData.memory_usage);
-                        metrics.responseTime.push(perfData.avg_response_time);
-
-                        // Keep only the last N data points
-                        if (metrics.timestamps.length > CONFIG.PERFORMANCE_METRICS.maxDataPoints) {
-                            metrics.timestamps.shift();
-                            metrics.cpu.shift();
-                            metrics.memory.shift();
-                            metrics.responseTime.shift();
-                        }
-
-                        // Update performance visualization
-                        updatePerformanceCharts(metrics);
-                    } catch (error) {
-                        console.error('Performance monitoring error:', error);
-                    }
-                }, CONFIG.PERFORMANCE_METRICS.sampleRate);
-            }
-        };
-
-        // Demo mode utilities
-        const DemoMode = {
-            scenarios: DEMO_DATA.scenarios,
-            currentScenario: null,
-            
-            async startScenario(scenarioName) {
-                const scenario = this.scenarios.find(s => s.name === scenarioName);
-                if (!scenario) return false;
-
-                this.currentScenario = scenario;
-                let currentStage = 0;
-
-                const runStage = async () => {
-                    if (currentStage >= scenario.stages.length) {
-                        addMessage(`Scenario "${scenarioName}" completed`, 'success');
-                        return;
-                    }
-
-                    const stage = scenario.stages[currentStage];
-                    const agent = DEMO_DATA.agents.find(a => a.id === stage.agent);
-
-                    addMessage(`${agent.name} starting stage: ${stage.name}`, 'info');
-                    
-                    // Simulate stage execution
-                    await new Promise(resolve => setTimeout(resolve, stage.duration));
-                    
-                    // Update agent metrics
-                    agent.tasks_completed++;
-                    agent.performance_metrics.avg_response_time = 
-                        (agent.performance_metrics.avg_response_time + stage.duration) / 2;
-
-                    addMessage(`${agent.name} completed stage: ${stage.name}`, 'success');
-                    
-                    currentStage++;
-                    await runStage();
-                };
-
-                await runStage();
-                return true;
-            },
-
-            generateRandomMetrics() {
-                return {
-                    cpu: Math.random() * 100,
-                    memory: 50 + Math.random() * 50,
-                    responseTime: 100 + Math.random() * 900
-                };
-            },
-
-            simulateAgentInteraction() {
-                const randomAgent = () => 
-                    DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
-                
-                setInterval(() => {
-                    const agent1 = randomAgent();
-                    const agent2 = randomAgent();
-                    
-                    if (agent1 !== agent2) {
-                        const interaction = {
-                            from: agent1.id,
-                            to: agent2.id,
-                            type: Math.random() > 0.5 ? 'query' : 'response',
-                            content: `${agent1.name} interacting with ${agent2.name}`
-                        };
-                        
-                        DEMO_DATA.messages.push(interaction);
-                        updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
-                        addMessage(interaction.content, 'info');
-                    }
-                }, 2000);
-            }
-        };
-
-        // Enhanced visualization utilities
-        function updatePerformanceCharts(metrics) {
-            // Implementation would go here - using a charting library like Chart.js
-            // This is just a placeholder for the actual implementation
-            console.log('Updating performance charts with metrics:', metrics);
-        }
-
-        // Enhanced workflow state management
+        // Fetch workflow state
         async function fetchWorkflowState() {
-            if (!state.currentStateId) return;
+            if (!currentStateId) return;
 
             try {
-                const data = await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/${state.currentStateId}/`);
+                const response = await fetch(`http://127.0.0.1:8000/workflow/${currentStateId}/`);
+                if (!response.ok) throw new Error('Failed to fetch workflow state');
+
+                const data = await response.json();
                 
                 // Update UI elements
-                document.getElementById('state-id').textContent = state.currentStateId;
+                document.getElementById('state-id').textContent = currentStateId;
                 document.getElementById('active-agents').textContent = data.active_agents.length;
                 document.getElementById('messages-count').textContent = data.messages.length;
+                document.getElementById('data-store').textContent = JSON.stringify(data.data_store, null, 2);
                 
-                // Update performance metrics if available
-                if (data.performance_metrics) {
-                    updatePerformanceCharts(data.performance_metrics);
-                }
-                
-                // Update agent status and metrics
-                await Promise.all(data.active_agents.map(async (agent) => {
-                    const agentMetrics = await ProductionMode.getAgentMetrics(agent.id);
-                    if (agentMetrics) {
-                        agent.performance_metrics = agentMetrics;
-                    }
-                }));
-                
-                // Update visualization with enhanced metrics
+                // Update visualization
                 updateVisualization(data.active_agents, data.messages);
                 
-                // Update status and data store
+                // Update status
                 updateStatus(data.status);
-                document.getElementById('data-store').textContent = 
-                    JSON.stringify(data.data_store, null, 2);
                 
-                // Process new messages
-                data.messages.forEach(msg => {
-                    if (!state.processedMessages.has(msg.id)) {
-                        addMessage(msg.content || `${msg.from} to ${msg.to}: ${msg.type}`, 
-                                 msg.type === 'error' ? 'error' : 'info');
-                        state.processedMessages.add(msg.id);
-                    }
-                });
+                // Add new messages
+                data.messages.forEach(msg => addMessage(msg));
                 
-                // Handle workflow completion
+                // Stop polling if workflow is completed
                 if (data.status.toLowerCase() === 'completed') {
-                    clearInterval(state.updateInterval);
+                    clearInterval(updateInterval);
                     document.getElementById('loading-spinner').style.display = 'none';
-                    showSuccess('Workflow completed successfully!');
-                    
-                    // Save final state to database
-                    await ProductionMode.updateWorkflowState(state.currentStateId, {
-                        status: 'completed',
-                        completion_time: new Date().toISOString(),
-                        final_metrics: data.performance_metrics
-                    });
                 }
             } catch (error) {
                 showError(`Error fetching workflow state: ${error.message}`);
-                if (state.retryCount++ >= CONFIG.MAX_RETRIES) {
+            }
+        }
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNetwork();
+
+            // Mode switch handling
+            document.getElementById('mode-switch').addEventListener('change', (e) => {
+                const demoControls = document.getElementById('demo-controls');
+                const workflowForm = document.getElementById('workflow-form');
+                
+                if (e.target.checked) {
+                    // Switch to demo mode
+                    demoControls.style.display = 'block';
+                    workflowForm.style.display = 'none';
+                    state.demoMode = true;
+                    activateStaticDemo();
+                } else {
+                    // Switch to production mode
+                    demoControls.style.display = 'none';
+                    workflowForm.style.display = 'block';
+                    state.demoMode = false;
+                    resetDemo();
+                }
+            });
+
+            // Demo speed control
+            const speedControl = document.getElementById('demo-speed');
+            speedControl.addEventListener('input', (e) => {
+                state.demoSpeed = parseFloat(e.target.value);
+                document.getElementById('speed-value').textContent = `${state.demoSpeed}x`;
+                if (state.updateInterval) {
                     clearInterval(state.updateInterval);
-                    document.getElementById('loading-spinner').style.display = 'none';
-                    showError('Max retries reached. Switching to demo mode...');
-                    activateStaticDemo();
+                    simulateDemoWorkflow();
                 }
-            }
-        }
+            });
 
-        // Initialize the application
-        async function initializeApplication() {
-            try {
-                // Initialize database connection
-                const dbInitialized = await ProductionMode.initializeDatabase();
-                if (!dbInitialized) {
-                    showError('Failed to initialize database. Switching to demo mode...');
-                    activateStaticDemo();
-                    return;
-                }
-
-                // Start performance monitoring
-                ProductionMode.startPerformanceMonitoring();
-
-                // Initialize network visualization
-                initializeNetwork();
-
-                // Setup event listeners
-                setupEventListeners();
-
-                // Initial connection check
-                await checkConnection();
-            } catch (error) {
-                console.error('Application initialization failed:', error);
-                showError('Failed to initialize application. Please refresh the page.');
-            }
-        }
-
-        // Setup event listeners
-        function setupEventListeners() {
-            // ... existing event listener setup code ...
-
-            // Add scenario selection handler for demo mode
-            document.getElementById('scenario-select')?.addEventListener('change', (e) => {
+            // Scenario selection
+            document.getElementById('scenario-select').addEventListener('change', (e) => {
                 if (state.demoMode) {
                     DemoMode.startScenario(e.target.value);
                 }
             });
-        }
 
-        // Start the application when the DOM is ready
-        document.addEventListener('DOMContentLoaded', initializeApplication);
-
-        // Global error boundary
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('Global error:', { msg, url, lineNo, columnNo, error });
-            showError(`An error occurred: ${msg}`);
-            return false;
-        };
-
-        // Performance monitoring
-        const PerformanceMonitor = {
-            metrics: {
-                errors: 0,
-                warnings: 0,
-                apiCalls: 0,
-                avgResponseTime: 0,
-                totalResponseTime: 0
-            },
-
-            startTime: Date.now(),
-
-            logError(error) {
-                this.metrics.errors++;
-                this.updateDashboard();
-                console.error('Monitored error:', error);
-            },
-
-            logWarning(warning) {
-                this.metrics.warnings++;
-                this.updateDashboard();
-                console.warn('Monitored warning:', warning);
-            },
-
-            logApiCall(duration) {
-                this.metrics.apiCalls++;
-                this.metrics.totalResponseTime += duration;
-                this.metrics.avgResponseTime = this.metrics.totalResponseTime / this.metrics.apiCalls;
-                this.updateDashboard();
-            },
-
-            getUptime() {
-                return Math.floor((Date.now() - this.startTime) / 1000);
-            },
-
-            updateDashboard() {
-                if (!CONFIG.PERFORMANCE_METRICS.enabled) return;
-
-                const metrics = {
-                    uptime: this.getUptime(),
-                    errors: this.metrics.errors,
-                    warnings: this.metrics.warnings,
-                    apiCalls: this.metrics.apiCalls,
-                    avgResponseTime: Math.round(this.metrics.avgResponseTime)
-                };
-
-                // Update desktop metrics
-                document.getElementById('uptime-desktop').textContent = `${metrics.uptime}s`;
-                document.getElementById('error-count-desktop').textContent = metrics.errors;
-                document.getElementById('warning-count-desktop').textContent = metrics.warnings;
-                document.getElementById('api-calls-desktop').textContent = metrics.apiCalls;
-                document.getElementById('avg-response-time-desktop').textContent = `${metrics.avgResponseTime}ms`;
-
-                // Update mobile metrics
-                document.getElementById('uptime-mobile').textContent = `${metrics.uptime}s`;
-                document.getElementById('error-count-mobile').textContent = metrics.errors;
-                document.getElementById('warning-count-mobile').textContent = metrics.warnings;
-                document.getElementById('api-calls-mobile').textContent = metrics.apiCalls;
-                document.getElementById('avg-response-time-mobile').textContent = `${metrics.avgResponseTime}ms`;
-
-                // Update status indicators for both desktop and mobile
-                const healthStatus = metrics.errors > 10 ? 'Critical' : metrics.errors > 5 ? 'Warning' : 'Healthy';
-                const healthClass = metrics.errors > 10 ? 'bg-danger' : metrics.errors > 5 ? 'bg-warning' : 'bg-success';
+            // Handle form submission with enhanced workflow types
+            document.getElementById('workflow-form').addEventListener('submit', async (event) => {
+                event.preventDefault();
                 
-                ['desktop', 'mobile'].forEach(device => {
-                    const statusElement = document.getElementById(`health-status-${device}`);
-                    statusElement.className = `badge ${healthClass}`;
-                    statusElement.textContent = healthStatus;
-                });
-
-                // Log to console if significant changes
-                if (metrics.errors > 0 && metrics.errors % 5 === 0) {
-                    console.warn('Error threshold reached:', metrics);
+                if (state.demoMode) {
+                    resetDemo();
+                    simulateDemoWorkflow();
+                    return;
                 }
-            },
 
-            reset() {
-                this.metrics = {
-                    errors: 0,
-                    warnings: 0,
-                    apiCalls: 0,
-                    avgResponseTime: 0,
-                    totalResponseTime: 0
-                };
-                this.startTime = Date.now();
-                this.updateDashboard();
-            }
-        };
-
-        // Enhanced fetch with performance monitoring
-        async function monitoredFetch(url, options = {}) {
-            const startTime = Date.now();
-            try {
-                const response = await fetch(url, options);
-                const duration = Date.now() - startTime;
-                PerformanceMonitor.logApiCall(duration);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                if (!await checkConnection()) {
+                    showError('Cannot connect to server. Would you like to try demo mode?');
+                    return;
                 }
-                return response;
-            } catch (error) {
-                PerformanceMonitor.logError(error);
-                throw error;
-            }
-        }
 
-        // Replace fetch calls with monitored version
-        const originalFetchWithRetry = fetchWithRetry;
-        fetchWithRetry = async function(url, options = {}) {
-            try {
-                return await originalFetchWithRetry(url, {
-                    ...options,
-                    fetch: monitoredFetch
-                });
-            } catch (error) {
-                PerformanceMonitor.logError(error);
-                throw error;
-            }
-        };
+                const inputData = document.getElementById('input-data').value;
+                const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
+                    .map(option => option.value);
+                const workflowType = document.getElementById('workflow-type').value;
 
-        // Enhanced error handling
-        const originalShowError = showError;
-        showError = function(message) {
-            PerformanceMonitor.logError(new Error(message));
-            originalShowError(message);
-        };
+                document.getElementById('loading-spinner').style.display = 'block';
 
-        // Start performance monitoring
-        document.addEventListener('DOMContentLoaded', () => {
-            if (CONFIG.PERFORMANCE_METRICS.enabled) {
-                console.log('Performance monitoring started');
-                setInterval(() => {
-                    PerformanceMonitor.updateDashboard();
-                }, CONFIG.PERFORMANCE_METRICS.sampleRate);
-            }
-        });
+                try {
+                    const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/start/`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            input_data: JSON.parse(inputData),
+                            agents: selectedAgents,
+                            workflow_type: workflowType
+                        })
+                    });
 
-        // Export monitoring interface for debugging
-        window.DEBUG = {
-            monitor: PerformanceMonitor,
-            state: state,
-            config: CONFIG
-        };
-
-        // Keyboard shortcuts
-        const KeyboardShortcuts = {
-            shortcuts: {
-                'ctrl+enter': {
-                    description: 'Start/Stop Workflow',
-                    handler: () => {
-                        const startButton = document.getElementById('start-workflow-btn');
-                        if (startButton && !startButton.disabled) {
-                            startButton.click();
-                        }
-                    }
-                },
-                'ctrl+d': {
-                    description: 'Toggle Demo Mode',
-                    handler: () => {
-                        const modeSwitch = document.getElementById('mode-switch');
-                        modeSwitch.checked = !modeSwitch.checked;
-                        modeSwitch.dispatchEvent(new Event('change'));
-                    }
-                },
-                'ctrl+m': {
-                    description: 'Toggle Metrics',
-                    handler: () => {
-                        const dropdown = document.getElementById('performanceDropdown');
-                        if (window.innerWidth < 992) { // Mobile breakpoint
-                            dropdown.click();
-                        }
-                    }
-                },
-                'ctrl+r': {
-                    description: 'Reset View',
-                    handler: () => {
-                        const resetButton = document.getElementById('reset-view');
-                        resetButton.click();
-                    }
-                },
-                'ctrl+l': {
-                    description: 'Clear Log',
-                    handler: () => {
-                        const clearButton = document.getElementById('clear-log');
-                        clearButton.click();
-                    }
-                },
-                'esc': {
-                    description: 'Close Modal',
-                    handler: () => {
-                        const modals = document.querySelectorAll('.modal.show');
-                        modals.forEach(modal => {
-                            bootstrap.Modal.getInstance(modal)?.hide();
-                        });
-                    }
-                }
-            },
-
-            init() {
-                document.addEventListener('keydown', (e) => {
-                    const key = this.getKeyCombo(e);
-                    const shortcut = this.shortcuts[key];
+                    state.currentStateId = response.state_id;
+                    state.processedMessages.clear();
                     
-                    if (shortcut && !this.isInputFocused()) {
-                        e.preventDefault();
-                        shortcut.handler();
-                    }
-                });
-
-                // Add keyboard shortcut hints to buttons
-                this.addShortcutHints();
-                
-                // Add help modal
-                this.createHelpModal();
-            },
-
-            getKeyCombo(e) {
-                const keys = [];
-                if (e.ctrlKey || e.metaKey) keys.push('ctrl');
-                if (e.key === 'Escape') return 'esc';
-                if (e.key !== 'Control' && e.key !== 'Meta') {
-                    keys.push(e.key.toLowerCase());
-                }
-                return keys.join('+');
-            },
-
-            isInputFocused() {
-                const activeElement = document.activeElement;
-                return activeElement.tagName === 'INPUT' || 
-                       activeElement.tagName === 'TEXTAREA' || 
-                       activeElement.isContentEditable;
-            },
-
-            addShortcutHints() {
-                // Add tooltips to buttons with their keyboard shortcuts
-                Object.entries(this.shortcuts).forEach(([key, { description }]) => {
-                    const tooltip = `${description} (${key})`;
+                    // Start polling for updates
+                    clearInterval(state.updateInterval);
+                    state.updateInterval = setInterval(fetchWorkflowState, CONFIG.UPDATE_INTERVAL);
                     
-                    switch (description) {
-                        case 'Start/Stop Workflow':
-                            document.getElementById('start-workflow-btn')?.setAttribute('title', tooltip);
-                            break;
-                        case 'Reset View':
-                            document.getElementById('reset-view')?.setAttribute('title', tooltip);
-                            break;
-                        case 'Clear Log':
-                            document.getElementById('clear-log')?.setAttribute('title', tooltip);
-                            break;
-                    }
-                });
-            },
-
-            createHelpModal() {
-                const modal = document.createElement('div');
-                modal.className = 'modal fade';
-                modal.id = 'keyboard-shortcuts-modal';
-                modal.setAttribute('tabindex', '-1');
-                modal.setAttribute('aria-labelledby', 'keyboard-shortcuts-label');
-                modal.setAttribute('aria-hidden', 'true');
-
-                modal.innerHTML = `
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="keyboard-shortcuts-label">
-                                    <i class="fas fa-keyboard me-2"></i>Keyboard Shortcuts
-                                </h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="table-responsive">
-                                    <table class="table">
-                                        <thead>
-                                            <tr>
-                                                <th>Shortcut</th>
-                                                <th>Description</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            ${Object.entries(this.shortcuts)
-                                                .map(([key, { description }]) => `
-                                                    <tr>
-                                                        <td><kbd>${key}</kbd></td>
-                                                        <td>${description}</td>
-                                                    </tr>
-                                                `).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-
-                document.body.appendChild(modal);
-
-                // Add help button to navbar
-                const navbar = document.querySelector('.navbar .container-fluid');
-                const helpButton = document.createElement('button');
-                helpButton.className = 'btn btn-dark ms-2';
-                helpButton.setAttribute('data-bs-toggle', 'modal');
-                helpButton.setAttribute('data-bs-target', '#keyboard-shortcuts-modal');
-                helpButton.innerHTML = '<i class="fas fa-keyboard"></i>';
-                helpButton.setAttribute('title', 'Keyboard Shortcuts');
-                navbar.appendChild(helpButton);
-            }
-        };
-
-        // Initialize keyboard shortcuts
-        document.addEventListener('DOMContentLoaded', () => {
-            KeyboardShortcuts.init();
-        });
-
-        // Add ARIA labels and roles for better accessibility
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add ARIA labels to visualization
-            const networkGraph = document.getElementById('network-graph');
-            networkGraph.setAttribute('role', 'application');
-            networkGraph.setAttribute('aria-label', 'Agent Interaction Visualization');
-
-            // Add ARIA labels to controls
-            document.getElementById('mode-switch').setAttribute('aria-label', 'Toggle Demo Mode');
-            document.getElementById('task-search').setAttribute('aria-label', 'Search Tasks');
-            document.getElementById('task-status-filter').setAttribute('aria-label', 'Filter by Status');
-            document.getElementById('task-type-filter').setAttribute('aria-label', 'Filter by Type');
-
-            // Add ARIA live regions for dynamic content
-            document.getElementById('messages').setAttribute('aria-live', 'polite');
-            document.getElementById('data-store').setAttribute('aria-live', 'polite');
-
-            // Add ARIA labels to metrics
-            document.querySelectorAll('.performance-metric').forEach(metric => {
-                const label = metric.textContent.trim();
-                metric.setAttribute('aria-label', label);
+                    addMessage('Workflow started successfully', 'success');
+                    showSuccess('Workflow started successfully!');
+                } catch (error) {
+                    showError(`Error starting workflow: ${error.message}`);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                }
             });
-        });
 
-        // Focus management system
-        const FocusManager = {
-            focusableSelectors: [
-                'a[href]',
-                'button:not([disabled])',
-                'input:not([disabled])',
-                'select:not([disabled])',
-                'textarea:not([disabled])',
-                '[tabindex="0"]'
-            ].join(','),
+            // Handle clear log button
+            document.getElementById('clear-log').addEventListener('click', () => {
+                document.getElementById('messages').innerHTML = '';
+            });
 
-            init() {
-                this.setupModalFocus();
-                this.setupTabTrapping();
-                this.setupFocusRestoration();
-                this.setupSkipLink();
-            },
+            // Initial connection check and setup
+            checkConnection().then(connected => {
+                if (!connected) {
+                    document.getElementById('mode-switch').checked = true;
+                    document.getElementById('mode-switch').dispatchEvent(new Event('change'));
+                }
+            });
 
-            setupModalFocus() {
-                // Handle focus when modals open
-                document.querySelectorAll('.modal').forEach(modal => {
-                    modal.addEventListener('shown.bs.modal', () => {
-                        const firstFocusable = modal.querySelector(this.focusableSelectors);
-                        firstFocusable?.focus();
-                    });
-
-                    // Store last focused element before modal
-                    modal.addEventListener('show.bs.modal', () => {
-                        modal.dataset.lastFocus = document.activeElement.id;
-                    });
-
-                    // Restore focus when modal closes
-                    modal.addEventListener('hidden.bs.modal', () => {
-                        const lastFocused = document.getElementById(modal.dataset.lastFocus);
-                        lastFocused?.focus();
-                    });
-                });
-            },
-
-            setupTabTrapping() {
-                // Trap focus within modals
-                document.addEventListener('keydown', (e) => {
-                    if (e.key !== 'Tab') return;
-
-                    const modal = document.querySelector('.modal.show');
-                    if (!modal) return;
-
-                    const focusableElements = modal.querySelectorAll(this.focusableSelectors);
-                    const firstFocusable = focusableElements[0];
-                    const lastFocusable = focusableElements[focusableElements.length - 1];
-
-                    if (e.shiftKey) {
-                        if (document.activeElement === firstFocusable) {
-                            e.preventDefault();
-                            lastFocusable.focus();
-                        }
-                    } else {
-                        if (document.activeElement === lastFocusable) {
-                            e.preventDefault();
-                            firstFocusable.focus();
-                        }
-                    }
-                });
-            },
-
-            setupFocusRestoration() {
-                // Restore focus after dynamic content updates
-                const observer = new MutationObserver((mutations) => {
-                    mutations.forEach(mutation => {
-                        if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
-                            const addedNode = mutation.addedNodes[0];
-                            if (addedNode.nodeType === Node.ELEMENT_NODE) {
-                                const focusable = addedNode.querySelector(this.focusableSelectors);
-                                if (focusable && !document.querySelector('.modal.show')) {
-                                    focusable.focus();
-                                }
-                            }
-                        }
-                    });
-                });
-
-                observer.observe(document.getElementById('messages'), {
-                    childList: true,
-                    subtree: true
-                });
-            },
-
-            setupSkipLink() {
-                // Handle skip link
-                const skipLink = document.querySelector('.skip-link');
-                const mainContent = document.getElementById('main-content');
-
-                skipLink?.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    mainContent?.focus();
-                    mainContent?.scrollIntoView();
-                });
-            },
-
-            announceMessage(message, priority = 'polite') {
-                // Announce messages to screen readers
-                const announcer = document.getElementById('sr-announcer');
-                if (!announcer) return;
-
-                announcer.setAttribute('aria-live', priority);
-                announcer.textContent = message;
-
-                // Clear after a delay
-                setTimeout(() => {
-                    announcer.textContent = '';
-                }, 3000);
+            // Initialize performance monitoring if in production mode
+            if (!state.demoMode) {
+                ProductionMode.startPerformanceMonitoring();
             }
-        };
-
-        // Initialize focus management
-        document.addEventListener('DOMContentLoaded', () => {
-            // Add screen reader announcer
-            const announcer = document.createElement('div');
-            announcer.id = 'sr-announcer';
-            announcer.className = 'visually-hidden';
-            announcer.setAttribute('aria-live', 'polite');
-            document.body.appendChild(announcer);
-
-            // Initialize focus management
-            FocusManager.init();
-
-            // Enhance existing functions with announcements
-            const originalShowError = showError;
-            showError = function(message) {
-                originalShowError(message);
-                FocusManager.announceMessage(message, 'assertive');
-            };
-
-            const originalShowSuccess = showSuccess;
-            showSuccess = function(message) {
-                originalShowSuccess(message);
-                FocusManager.announceMessage(message);
-            };
-
-            const originalAddMessage = addMessage;
-            addMessage = function(message, type) {
-                originalAddMessage(message, type);
-                FocusManager.announceMessage(message);
-            };
         });
-
     </script>
 </body>
 </html>
