@@ -309,6 +309,9 @@
         let updateInterval = null;
         const toast = new bootstrap.Toast(document.getElementById('error-toast'));
 
+        // Update these URLs to point to your actual API endpoint
+        const API_BASE_URL = 'https://your-api-domain.com'; // Replace with your actual API domain
+
         // Initialize network visualization
         function initializeNetwork() {
             const container = document.getElementById('network-graph');
@@ -435,7 +438,7 @@
             if (!currentStateId) return;
 
             try {
-                const response = await fetch(`http://127.0.0.1:8000/workflow/${currentStateId}/`);
+                const response = await fetch(`${API_BASE_URL}/workflow/${currentStateId}/`);
                 if (!response.ok) throw new Error('Failed to fetch workflow state');
 
                 const data = await response.json();
@@ -480,7 +483,7 @@
 
                 try {
                     // Start workflow
-                    const response = await fetch('http://127.0.0.1:8000/workflow/start/', {
+                    const response = await fetch(`${API_BASE_URL}/workflow/start/`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -511,7 +514,7 @@
             });
 
             // Check server connection
-            fetch('http://127.0.0.1:8000/health/')
+            fetch(`${API_BASE_URL}/health/`)
                 .catch(() => {
                     document.getElementById('connection-status').innerHTML = `
                         <i class="fas fa-circle text-danger me-2"></i>Disconnected
