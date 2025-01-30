@@ -301,16 +301,26 @@
                             <div class="mb-3">
                                 <label for="input-data" class="form-label">Input Data</label>
                                 <textarea class="form-control" id="input-data" rows="4" placeholder="Enter JSON input data" required></textarea>
+                                <div class="form-text">Example: {"query": "analyze market trends", "parameters": {"timeframe": "1w"}}</div>
                             </div>
                             <div class="mb-3">
                                 <label for="agent-selection" class="form-label">Select Agents</label>
-                                <select class="form-select" id="agent-selection" multiple>
-                                    <option value="agent_a">Agent A</option>
-                                    <option value="agent_b">Agent B</option>
-                                    <option value="agent_c">Agent C</option>
+                                <select class="form-select" id="agent-selection" multiple required>
+                                    <option value="professor_athena">Professor Athena (Research)</option>
+                                    <option value="dr_milgrim">Dr. Milgrim (Analysis)</option>
+                                    <option value="yaat">YAAT (Task Execution)</option>
+                                </select>
+                                <div class="form-text">Hold Ctrl/Cmd to select multiple agents</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="workflow-type" class="form-label">Workflow Type</label>
+                                <select class="form-select" id="workflow-type" required>
+                                    <option value="sequential">Sequential</option>
+                                    <option value="parallel">Parallel</option>
+                                    <option value="hybrid">Hybrid</option>
                                 </select>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">
+                            <button type="submit" class="btn btn-primary w-100" id="start-workflow-btn">
                                 <i class="fas fa-play me-2"></i>Start Workflow
                             </button>
                         </form>
@@ -470,26 +480,54 @@
             DEMO_MODE: false,
             UPDATE_INTERVAL: 1000,
             MAX_RETRIES: 3,
-            RETRY_DELAY: 2000
+            RETRY_DELAY: 2000,
+            WORKFLOW_TYPES: {
+                sequential: 'Sequential execution of agents',
+                parallel: 'Parallel execution with coordination',
+                hybrid: 'Dynamic execution based on task'
+            }
         };
 
-        // Static demo data
+        // Static demo data with enhanced agent profiles
         const DEMO_DATA = {
             agents: [
-                { id: 'agent1', name: 'Professor Athena', status: 'active', tasks_completed: 5 },
-                { id: 'agent2', name: 'Dr. Milgrim', status: 'active', tasks_completed: 3 },
-                { id: 'agent3', name: 'YAAT', status: 'active', tasks_completed: 4 }
+                { 
+                    id: 'professor_athena',
+                    name: 'Professor Athena',
+                    status: 'active',
+                    tasks_completed: 5,
+                    specialty: 'Research & Analysis',
+                    confidence: 0.92
+                },
+                { 
+                    id: 'dr_milgrim',
+                    name: 'Dr. Milgrim',
+                    status: 'active',
+                    tasks_completed: 3,
+                    specialty: 'Data Processing',
+                    confidence: 0.87
+                },
+                { 
+                    id: 'yaat',
+                    name: 'YAAT',
+                    status: 'active',
+                    tasks_completed: 4,
+                    specialty: 'Task Execution',
+                    confidence: 0.95
+                }
             ],
             messages: [
-                { from: 'agent1', to: 'agent2', type: 'query' },
-                { from: 'agent2', to: 'agent3', type: 'response' },
-                { from: 'agent3', to: 'agent1', type: 'update' }
+                { from: 'professor_athena', to: 'dr_milgrim', type: 'query', content: 'Initiating research analysis' },
+                { from: 'dr_milgrim', to: 'yaat', type: 'response', content: 'Processing data patterns' },
+                { from: 'yaat', to: 'professor_athena', type: 'update', content: 'Executing defined tasks' }
             ],
             status: 'running',
             data_store: {
                 current_task: 'Analyzing data patterns',
                 progress: 75,
-                results: []
+                results: [],
+                workflow_type: 'sequential',
+                start_time: new Date().toISOString()
             }
         };
 
@@ -500,7 +538,9 @@
             currentStateId: null,
             networkInstance: null,
             updateInterval: null,
-            retryCount: 0
+            retryCount: 0,
+            processedMessages: new Set(),
+            selectedWorkflowType: 'sequential'
         };
 
         // Initialize network visualization with error handling
@@ -652,30 +692,56 @@
         function simulateDemoWorkflow() {
             let step = 0;
             const maxSteps = 10;
+            const messageTypes = ['query', 'analysis', 'response', 'update', 'result'];
+            const taskTypes = [
+                'Initializing research parameters',
+                'Gathering data samples',
+                'Processing information',
+                'Analyzing patterns',
+                'Generating insights',
+                'Validating results',
+                'Preparing report'
+            ];
             
             state.updateInterval = setInterval(() => {
                 step++;
-                // Simulate workflow progress
+                // Update progress
                 const progress = (step / maxSteps) * 100;
                 DEMO_DATA.data_store.progress = progress;
+                DEMO_DATA.data_store.current_task = taskTypes[Math.floor((taskTypes.length * step) / maxSteps)];
                 
-                // Update visualization with random new messages
+                // Generate realistic message
+                const fromAgent = DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
+                const toAgent = DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)];
+                const messageType = messageTypes[Math.floor(Math.random() * messageTypes.length)];
+                
                 const newMessage = {
-                    from: DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)].id,
-                    to: DEMO_DATA.agents[Math.floor(Math.random() * DEMO_DATA.agents.length)].id,
-                    type: ['query', 'response', 'update'][Math.floor(Math.random() * 3)]
+                    id: Date.now(),
+                    from: fromAgent.id,
+                    to: toAgent.id,
+                    type: messageType,
+                    content: `${fromAgent.name} is ${DEMO_DATA.data_store.current_task.toLowerCase()}`
                 };
+                
                 DEMO_DATA.messages.push(newMessage);
                 
-                // Update UI
+                // Update UI with more detailed information
                 updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
                 document.getElementById('messages-count').textContent = DEMO_DATA.messages.length;
                 document.getElementById('data-store').textContent = JSON.stringify(DEMO_DATA.data_store, null, 2);
+                addMessage(newMessage.content, messageType === 'error' ? 'error' : 'info');
+                
+                // Update agent status randomly
+                DEMO_DATA.agents.forEach(agent => {
+                    agent.tasks_completed += Math.random() > 0.7 ? 1 : 0;
+                    agent.confidence = Math.max(0.5, Math.min(1, agent.confidence + (Math.random() - 0.5) * 0.1));
+                });
                 
                 if (step >= maxSteps) {
                     clearInterval(state.updateInterval);
                     updateStatus('completed');
-                    addMessage('Demo workflow completed', 'success');
+                    addMessage('Demo workflow completed successfully', 'success');
+                    document.getElementById('loading-spinner').style.display = 'none';
                 }
             }, CONFIG.UPDATE_INTERVAL * state.demoSpeed);
         }
@@ -728,6 +794,124 @@
             }
         }
 
+        // Add missing fetchWorkflowState function
+        async function fetchWorkflowState() {
+            if (!state.currentStateId) return;
+
+            try {
+                const data = await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/${state.currentStateId}/`);
+                
+                // Update UI elements
+                document.getElementById('state-id').textContent = state.currentStateId;
+                document.getElementById('active-agents').textContent = data.active_agents.length;
+                document.getElementById('messages-count').textContent = data.messages.length;
+                document.getElementById('data-store').textContent = JSON.stringify(data.data_store, null, 2);
+                
+                // Update visualization
+                updateVisualization(data.active_agents, data.messages);
+                
+                // Update status
+                updateStatus(data.status);
+                
+                // Add new messages
+                data.messages.forEach(msg => {
+                    if (!state.processedMessages.has(msg.id)) {
+                        addMessage(msg.content || `Message from ${msg.from} to ${msg.to}: ${msg.type}`, 
+                                 msg.type === 'error' ? 'error' : 'info');
+                        state.processedMessages.add(msg.id);
+                    }
+                });
+                
+                // Stop polling if workflow is completed
+                if (data.status.toLowerCase() === 'completed') {
+                    clearInterval(state.updateInterval);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    showSuccess('Workflow completed successfully!');
+                }
+            } catch (error) {
+                showError(`Error fetching workflow state: ${error.message}`);
+                if (state.retryCount++ >= CONFIG.MAX_RETRIES) {
+                    clearInterval(state.updateInterval);
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    showError('Max retries reached. Switching to demo mode...');
+                    activateStaticDemo();
+                }
+            }
+        }
+
+        // Add success message function
+        function showSuccess(message) {
+            const toast = document.getElementById('error-toast');
+            const header = toast.querySelector('.toast-header');
+            const body = toast.querySelector('.toast-body');
+            
+            header.classList.remove('bg-danger');
+            header.classList.add('bg-success');
+            header.querySelector('strong').textContent = 'Success';
+            body.textContent = message;
+            
+            new bootstrap.Toast(toast).show();
+        }
+
+        // Update form submission to include workflow type
+        const originalSubmitHandler = document.getElementById('workflow-form').onsubmit;
+        document.getElementById('workflow-form').onsubmit = async (event) => {
+            event.preventDefault();
+            
+            if (state.demoMode) {
+                resetDemo();
+                simulateDemoWorkflow();
+                return;
+            }
+
+            if (!await checkConnection()) {
+                showError('Cannot connect to server. Would you like to try demo mode?');
+                return;
+            }
+
+            const inputData = document.getElementById('input-data').value;
+            const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
+                .map(option => option.value);
+            const workflowType = document.getElementById('workflow-type').value;
+
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            try {
+                const response = await fetchWithRetry(`${CONFIG.API_BASE_URL}/workflow/start/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        input_data: JSON.parse(inputData),
+                        agents: selectedAgents,
+                        workflow_type: workflowType
+                    })
+                });
+
+                state.currentStateId = response.state_id;
+                state.processedMessages.clear();
+                
+                // Start polling for updates
+                clearInterval(state.updateInterval);
+                state.updateInterval = setInterval(fetchWorkflowState, CONFIG.UPDATE_INTERVAL);
+                
+                addMessage('Workflow started successfully', 'success');
+                showSuccess('Workflow started successfully!');
+            } catch (error) {
+                showError(`Error starting workflow: ${error.message}`);
+                document.getElementById('loading-spinner').style.display = 'none';
+            }
+        };
+
+        // Add workflow type change handler
+        document.getElementById('workflow-type').addEventListener('change', (e) => {
+            state.selectedWorkflowType = e.target.value;
+            // Update demo data if in demo mode
+            if (state.demoMode) {
+                DEMO_DATA.data_store.workflow_type = state.selectedWorkflowType;
+                updateVisualization(DEMO_DATA.agents, DEMO_DATA.messages);
+            }
+        });
+
         // Initialize the page with enhanced error handling
         document.addEventListener('DOMContentLoaded', () => {
             // Check for online/offline status
@@ -748,59 +932,6 @@
                     clearInterval(state.updateInterval);
                     simulateDemoWorkflow();
                 }
-            });
-
-            // Enhanced form submission with connection check
-            document.getElementById('workflow-form').addEventListener('submit', async (event) => {
-                event.preventDefault();
-                
-                if (state.demoMode) {
-                    resetDemo();
-                    simulateDemoWorkflow();
-                    return;
-                }
-
-                if (!await checkConnection()) {
-                    showError('Cannot connect to server. Would you like to try demo mode?');
-                    return;
-                }
-
-                const inputData = document.getElementById('input-data').value;
-                const selectedAgents = Array.from(document.getElementById('agent-selection').selectedOptions)
-                    .map(option => option.value);
-
-                document.getElementById('loading-spinner').style.display = 'block';
-
-                try {
-                    // Start workflow
-                    const response = await fetch(`${CONFIG.API_BASE_URL}/workflow/start/`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            input_data: JSON.parse(inputData),
-                            agents: selectedAgents
-                        })
-                    });
-
-                    if (!response.ok) throw new Error('Failed to start workflow');
-
-                    const data = await response.json();
-                    state.currentStateId = data.state_id;
-                    
-                    // Start polling for updates
-                    clearInterval(state.updateInterval);
-                    state.updateInterval = setInterval(fetchWorkflowState, CONFIG.UPDATE_INTERVAL);
-                    
-                    addMessage('Workflow started successfully', 'success');
-                } catch (error) {
-                    showError(`Error starting workflow: ${error.message}`);
-                    document.getElementById('loading-spinner').style.display = 'none';
-                }
-            });
-
-            // Handle clear log button
-            document.getElementById('clear-log').addEventListener('click', () => {
-                document.getElementById('messages').innerHTML = '';
             });
 
             // Initial connection check
