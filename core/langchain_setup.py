@@ -20,21 +20,27 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize LangSmith client
-langsmith_client = Client()
+# Initialize LangSmith client for monitoring
+langsmith_client = Client(
+    api_url=settings.LANGSMITH_API_URL,
+    api_key=settings.LANGSMITH_API_KEY,
+    project_name=settings.LANGSMITH_PROJECT
+)
 
 def get_llm(temperature: float = None, model_name: str = None) -> ChatOpenAI:
     """Get LLM instance with specified or default settings."""
     return ChatOpenAI(
         temperature=temperature or float(settings.TEMPERATURE),
         model_name=model_name or settings.MODEL_NAME,
-        streaming=True
+        streaming=True,
+        callbacks=[langsmith_client.callback_handler()]
     )
 
 def get_embeddings() -> OpenAIEmbeddings:
     """Get embeddings model instance."""
     return OpenAIEmbeddings(
-        model=settings.EMBEDDING_MODEL
+        model=settings.EMBEDDING_MODEL,
+        callbacks=[langsmith_client.callback_handler()]
     )
 
 def get_vectorstore() -> Chroma:
@@ -47,7 +53,9 @@ def get_vectorstore() -> Chroma:
 def create_agent_executor(
     tools: List[Tool],
     system_prompt: str,
-    memory: ConversationBufferMemory = None
+    memory: ConversationBufferMemory = None,
+    temperature: float = None,
+    max_iterations: int = None
 ) -> AgentExecutor:
     """Create an agent executor with specified tools and prompt."""
     prompt = ChatPromptTemplate.from_messages([
@@ -57,7 +65,7 @@ def create_agent_executor(
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    llm = get_llm()
+    llm = get_llm(temperature=temperature)
     agent = create_openai_functions_agent(llm, tools, prompt)
     
     return AgentExecutor(
@@ -65,14 +73,16 @@ def create_agent_executor(
         tools=tools,
         memory=memory,
         verbose=settings.DEBUG,
-        max_iterations=settings.MAX_ITERATIONS
+        max_iterations=max_iterations or settings.MAX_ITERATIONS,
+        callbacks=[langsmith_client.callback_handler()]
     )
 
 def create_memory(memory_key: str = "chat_history") -> ConversationBufferMemory:
     """Create a conversation memory instance."""
     return ConversationBufferMemory(
         memory_key=memory_key,
-        return_messages=True
+        return_messages=True,
+        output_key="output"
     )
 
 def create_output_parser() -> JsonOutputParser:
@@ -87,4 +97,22 @@ def format_chat_history(messages: List[Dict[str, Any]]) -> List[HumanMessage | A
             formatted_messages.append(HumanMessage(content=message["content"]))
         elif message["role"] == "ai":
             formatted_messages.append(AIMessage(content=message["content"]))
-    return formatted_messages 
+    return formatted_messages
+
+def trace_chain(name: str):
+    """Decorator to trace a chain using LangSmith."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            with langsmith_client.trace(
+                name=name,
+                project_name=settings.LANGSMITH_PROJECT
+            ) as trace:
+                result = func(*args, **kwargs)
+                trace.add_attributes({
+                    "args": str(args),
+                    "kwargs": str(kwargs),
+                    "result": str(result)
+                })
+                return result
+        return wrapper
+    return decorator 

@@ -14,6 +14,11 @@ from core.langchain_setup import (
     create_memory,
     format_chat_history
 )
+from agents.profiles import (
+    get_agent_config,
+    get_agent_prompt,
+    get_agent_tools
+)
 
 # Initialize logging
 logging.basicConfig(
@@ -34,19 +39,42 @@ def create_agent_node(
     system_prompt: str
 ) -> Any:
     """Create an agent node for the workflow graph."""
+    # Get agent configuration
+    agent_config = get_agent_config(name)
     memory = create_memory()
-    agent = create_agent_executor(tools, system_prompt, memory)
+    
+    # Create agent executor with agent-specific settings
+    agent = create_agent_executor(
+        tools=tools,
+        system_prompt=system_prompt,
+        memory=memory,
+        temperature=agent_config["temperature"],
+        max_iterations=agent_config["max_iterations"]
+    )
     
     def agent_node(state: AgentState) -> AgentState:
         """Agent node function for the graph."""
         messages = state["messages"]
         data_store = state["data_store"]
         
+        # Format prompt with current context
+        objective = data_store.get("input_data", {}).get("query", "")
+        tool_names = [tool.name for tool in tools]
+        chat_history = "\n".join([f"{m.type}: {m.content}" for m in messages[:-1]])
+        
+        prompt = get_agent_prompt(
+            agent_name=name,
+            objective=objective,
+            tools=tool_names,
+            chat_history=chat_history
+        )
+        
         # Run the agent
         result = agent.invoke({
             "input": messages[-1].content,
             "chat_history": messages[:-1],
-            "data_store": data_store
+            "data_store": data_store,
+            "system_prompt": prompt
         })
         
         # Update state
@@ -87,17 +115,22 @@ def create_tool_node(tool: BaseTool) -> Any:
 
 def build_sequential_graph(
     agents: List[str],
-    tools: List[BaseTool]
+    tools: List[BaseTool] = None
 ) -> StateGraph:
     """Build a sequential workflow graph."""
     workflow = StateGraph(AgentState)
     
     # Add nodes for each agent
     for i, agent_name in enumerate(agents):
-        agent_config = settings.AGENT_CONFIGS[agent_name]
-        system_prompt = f"You are {agent_name}. {agent_config.get('description', '')}"
+        # Get agent-specific tools
+        agent_tools = tools or get_agent_tools(agent_name)
+        agent_config = get_agent_config(agent_name)
         
-        node = create_agent_node(agent_name, tools, system_prompt)
+        node = create_agent_node(
+            name=agent_name,
+            tools=agent_tools,
+            system_prompt=agent_config["prompt"]
+        )
         workflow.add_node(agent_name, node)
         
         # Connect nodes sequentially
@@ -111,17 +144,22 @@ def build_sequential_graph(
 
 def build_parallel_graph(
     agents: List[str],
-    tools: List[BaseTool]
+    tools: List[BaseTool] = None
 ) -> StateGraph:
     """Build a parallel workflow graph."""
     workflow = StateGraph(AgentState)
     
     # Add nodes for each agent
     for agent_name in agents:
-        agent_config = settings.AGENT_CONFIGS[agent_name]
-        system_prompt = f"You are {agent_name}. {agent_config.get('description', '')}"
+        # Get agent-specific tools
+        agent_tools = tools or get_agent_tools(agent_name)
+        agent_config = get_agent_config(agent_name)
         
-        node = create_agent_node(agent_name, tools, system_prompt)
+        node = create_agent_node(
+            name=agent_name,
+            tools=agent_tools,
+            system_prompt=agent_config["prompt"]
+        )
         workflow.add_node(agent_name, node)
         
         # Connect each agent directly to end
@@ -131,7 +169,7 @@ def build_parallel_graph(
 
 def build_hybrid_graph(
     agents: List[str],
-    tools: List[BaseTool]
+    tools: List[BaseTool] = None
 ) -> StateGraph:
     """Build a hybrid workflow graph with conditional branching."""
     workflow = StateGraph(AgentState)
@@ -142,10 +180,15 @@ def build_hybrid_graph(
     
     # Add nodes for each agent
     for agent_name in agents:
-        agent_config = settings.AGENT_CONFIGS[agent_name]
-        system_prompt = f"You are {agent_name}. {agent_config.get('description', '')}"
+        # Get agent-specific tools
+        agent_tools = tools or get_agent_tools(agent_name)
+        agent_config = get_agent_config(agent_name)
         
-        node = create_agent_node(agent_name, tools, system_prompt)
+        node = create_agent_node(
+            name=agent_name,
+            tools=agent_tools,
+            system_prompt=agent_config["prompt"]
+        )
         workflow.add_node(agent_name, node)
         
         # Add conditional edges
@@ -186,19 +229,15 @@ def create_initial_state(
         }
     }
 
-# Create tools list
-tools: List[BaseTool] = []  # Add your tools here
-
-# Build the graph based on workflow type
+# Get compiled graph based on workflow type
 def get_compiled_graph(workflow_type: str, agents: List[str]) -> Any:
     """Get compiled workflow graph for specified type and agents."""
     builder = get_workflow_builder(workflow_type)
     if not builder:
         raise ValueError(f"Invalid workflow type: {workflow_type}")
-    return builder(agents, tools)
+    return builder(agents)
 
 # Compile default graph
 compiled_graph = build_sequential_graph(
-    settings.AVAILABLE_AGENTS,
-    tools
+    settings.AVAILABLE_AGENTS
 )

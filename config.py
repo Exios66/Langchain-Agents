@@ -122,6 +122,24 @@ class Settings(BaseSettings):
         description="Embedding model name"
     )
     
+    # LangSmith Settings
+    LANGSMITH_API_URL: str = Field(
+        default=os.getenv("LANGSMITH_API_URL", "https://api.smith.langchain.com"),
+        description="LangSmith API URL"
+    )
+    LANGSMITH_API_KEY: str = Field(
+        default=os.getenv("LANGSMITH_API_KEY", ""),
+        description="LangSmith API key"
+    )
+    LANGSMITH_PROJECT: str = Field(
+        default=os.getenv("LANGSMITH_PROJECT", "default"),
+        description="LangSmith project name"
+    )
+    LANGSMITH_TRACING_ENABLED: bool = Field(
+        default=bool(os.getenv("LANGSMITH_TRACING_ENABLED", True)),
+        description="Enable LangSmith tracing"
+    )
+    
     # Integration Settings
     NOTION_API_KEY: str = Field(
         default=os.getenv("NOTION_API_KEY", ""),
