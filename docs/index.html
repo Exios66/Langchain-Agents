@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent Workflow Interface</title>
+    
+    <!-- Embedded CSS -->
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #2c3e50;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background-color: #2980b9;
+        }
+
+        #network-graph {
+            width: 100%;
+            height: 300px;
+            background: white;
+            border-radius: 5px;
+            padding: 1rem;
+        }
+
+        .alert {
+            margin-bottom: 5px;
+        }
+    </style>
+
+</head>
+<body>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand">
+                <i class="fas fa-robot me-2"></i> Multi-Agent Workflow System
+            </a>
+            <span class="text-light" id="connection-status">
+                <i class="fas fa-circle text-success me-2"></i> Connected
+            </span>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container my-4">
+        <div class="row">
+            <!-- Workflow Control Panel -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-cogs me-2"></i> Workflow Controls
+                    </div>
+                    <div class="card-body">
+                        <form id="workflow-form">
+                            <div class="mb-3">
+                                <label for="input-data" class="form-label">Input Data</label>
+                                <textarea class="form-control" id="input-data" rows="3" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Task Type</label>
+                                <select id="task-type" class="form-select">
+                                    <option value="text_processing">Text Processing</option>
+                                    <option value="data_analysis">Data Analysis</option>
+                                    <option value="decision_making">Decision Making</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-play me-2"></i> Start Workflow
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Workflow Visualization -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-project-diagram me-2"></i> Workflow Visualization
+                    </div>
+                    <div class="card-body">
+                        <div id="network-graph" class="visualization-container"></div>
+                    </div>
+                </div>
+
+                <!-- Messages Log -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <i class="fas fa-comments me-2"></i> Workflow Messages
+                    </div>
+                    <div class="card-body">
+                        <div id="messages-log" class="overflow-auto" style="max-height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Embedded JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('workflow-form');
+            const messagesLog = document.getElementById('messages-log');
+
+            // Establish WebSocket Connection for Real-Time Updates
+            const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+
+            socket.onmessage = function(event) {
+                const message = JSON.parse(event.data);
+                addMessage(message.text, message.type);
+            };
+
+            form.addEventListener('submit', async (event) => {
+                event.preventDefault();
+                const inputData = document.getElementById('input-data').value;
+                const taskType = document.getElementById('task-type').value;
+
+                try {
+                    // Start the workflow
+                    const response = await fetch('http://127.0.0.1:8000/workflow/start/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ input_data: inputData, task_type: taskType })
+                    });
+
+                    const data = await response.json();
+                    const stateId = data.state_id;
+
+                    addMessage(`Workflow started with ID: ${stateId}`, 'success');
+
+                    // Poll for workflow updates
+                    pollWorkflow(stateId);
+                } catch (error) {
+                    addMessage(`Error: ${error.message}`, 'error');
+                }
+            });
+
+            async function pollWorkflow(stateId) {
+                try {
+                    const response = await fetch(`http://127.0.0.1:8000/workflow/${stateId}/`);
+                    const stateData = await response.json();
+
+                    // Display messages
+                    stateData.messages.forEach(msg => addMessage(msg, 'info'));
+
+                    if (stateData.status !== 'completed') {
+                        setTimeout(() => pollWorkflow(stateId), 3000);
+                    }
+                } catch (error) {
+                    addMessage(`Error fetching workflow state: ${error.message}`, 'error');
+                }
+            }
+
+            function addMessage(text, type) {
+                const messageElement = document.createElement('div');
+                messageElement.className = `alert alert-${type === 'error' ? 'danger' : 'info'}`;
+                messageElement.textContent = text;
+                messagesLog.appendChild(messageElement);
+                messagesLog.scrollTop = messagesLog.scrollHeight;
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -32,4 +32,5 @@ In the below table, x=Present Variables. For Example, (SE-MP-V1.md) Following St
 | (SQ)                | **Scarlet Quinn**                    |
 | (CTRL)              | **Control (GPT4o)**                  |
 |                     |                                      |
+
 ```
