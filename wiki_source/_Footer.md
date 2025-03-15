@@ -1,9 +1,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 
-
 ![Primary Language: Python](https://img.shields.io/badge/language-Python-blue.svg)
-
 
 ![Secondary Language: R](https://img.shields.io/badge/language-R-red.svg)
 

@@ -1,52 +1,63 @@
 # run.py
-from core.workflow import WorkflowManager
-# run.py
 import uvicorn
+import socket
+from typing import Optional
+import logging
+from config import settings
 
-if __name__ == "__main__":
-    uvicorn.run("api.endpoints:app", host="0.0.0.0", port=8000, reload=True)
+# Initialize logging
+logging.basicConfig(
+    level=getattr(logging, settings.LOG_LEVEL.upper()),
+    format=settings.LOG_FORMAT
+)
+logger = logging.getLogger(__name__)
+
+def find_available_port(start_port: int = 8000, max_port: int = 8020) -> Optional[int]:
+    """Find an available port in the given range."""
+    for port in range(start_port, max_port + 1):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            try:
+                sock.bind((settings.HOST, port))
+                return port
+            except OSError:
+                continue
+    return None
+
 def main():
     """Main execution function."""
-    # Initialize workflow
-    workflow = WorkflowManager()
+    port = settings.PORT
     
-    # Create initial state with test input
-    initial_state = {
-        'messages': [],
-        'data_store': {
-            'input_data': "This is a test statement that needs to be analyzed for truth and deception.",
-            'config': {
-                'stream_enabled': True,
-                'review_required': True,
-                'agent_settings': {
-                    'athena_threshold': 0.8,
-                    'milgrim_authority': 0.7,
-                    'yaat_casualness': 0.9
-                }
-            }
-        }
-    }
+    # If port is not available, find another one
+    if port < 8000 or port > 8020:
+        logger.warning(f"Port {port} is outside recommended range (8000-8020)")
     
-    # Execute workflow
-    final_state = workflow.execute(initial_state)
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind((settings.HOST, port))
+    except OSError:
+        logger.warning(f"Port {port} is not available, searching for an alternative")
+        port = find_available_port()
+        if port is None:
+            logger.error("No available ports found in range 8000-8020")
+            return 1
     
-    # Print execution log
-    print("\nExecution Log:")
-    for message in final_state['messages']:
-        print(f" - {message}")
+    logger.info(f"Starting server on {settings.HOST}:{port}")
+    config = uvicorn.Config(
+        "api.endpoints:app",
+        host=settings.HOST,
+        port=port,
+        reload=settings.DEBUG,
+        workers=settings.WORKERS,
+        log_level=settings.LOG_LEVEL.lower()
+    )
     
-    # Print agent analyses
-    print("\nAgent Analyses:")
-    analyses = {
-        'Professor Athena': final_state['data_store'].get('athena_analysis', {}),
-        'Dr. Milgrim': final_state['data_store'].get('milgrim_analysis', {}),
-        'YAAT': final_state['data_store'].get('yaat_analysis', {})
-    }
-    
-    for agent, analysis in analyses.items():
-        print(f"\n{agent}'s Analysis:")
-        for key, value in analysis.items():
-            print(f"  {key}: {value}")
+    server = uvicorn.Server(config)
+    try:
+        server.run()
+        return 0
+    except Exception as e:
+        logger.error(f"Error starting server: {e}")
+        return 1
 
 if __name__ == "__main__":
-    main()
+    exit(main())
